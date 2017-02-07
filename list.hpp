@@ -3,8 +3,7 @@
 
 #include "syntax.hpp"
 
-namespace atc      {
-namespace mpl      {
+namespace metafun  {
 namespace list_dtl {
 
     template<int n, typename... args>
@@ -99,20 +98,35 @@ namespace list_dtl {
     struct generate_all_sublists_;
     
 } // namespace list_dtl
-} // namespace mpl
-} // namesapce atc
+} // namespace metafun
 
-namespace atc {
-namespace mpl {
+
+namespace metafun {
     
     template<typename... Collections>
     using concatenate = typename list_dtl::concatenate_<Collections...>::type;
 
     template<typename... args> struct list;
 
+    template<>
+    struct list
+    {
+	using all = list<>;
+	
+	template<template<typename...> class F>
+	using apply = F<>;
+
+	using tail = list<>;
+
+	using reverse = list<>;	    
+    };
+
+    
     template<typename... args>
     struct list
     {
+	using all = list<args...>;
+	
 	template<template<typename...> class F>
 	using apply = F<args...>;
       	
@@ -122,36 +136,28 @@ namespace mpl {
 	template<int n>
 	using erase = typename list_dtl::erase_<n, args...>::template apply<list>;
 
+//	template<int n>
+//	using insert = ;
+
+//	template<int n>
+//	struct replace
+	
 	using head = at<0>;
 	using tail = erase<0>;
 
-//	template<int n>
-//	using all_sublists_of_size = 
-//	    typename list_dtl::generate_all_sublists_<n, list<>, list<args...> >::type;
+	template<typename H>
+	using push_front = list<H, args...> ;
+
+	template<typename T>
+	using push_back = list<args..., H>;
+
+	using pop_front = tail;
+	using pop_back = typename reverse::pop_front::reverse;
+	    
+	using reverse = typename tail::reverse::template push_back<head>;
     };
     
-} // namespace mpl
-} // namespace atc
+} // namespace metafun
 
-/*
-namespace atc      {
-namespace mpl      {
-namespace list_dtl {
-
-    template<int n, typename Result, typename List>
-    struct generate_all_sublists_;
-
-    template<typename Result, typename List>
-    struct generate_all_sublists_<0, Result, List>
-    {
-	using type = concatenate<Result, list<> >;
-    };
-
-//    template<int n, typename Result, typename... 
-	
-}
-}
-}
-*/
 
 #endif // ATC_MPL_LIST_INC

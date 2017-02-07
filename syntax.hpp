@@ -3,8 +3,7 @@
 
 #include <type_traits>
 
-namespace atc {
-namespace mpl {
+namespace metafun {
 
     template<typename... Terms>
     struct terms
@@ -25,10 +24,7 @@ namespace mpl {
     template<typename AtomicTerm>
     struct term
     {
-	enum
-	{
-	    is_atomic        = true
-	};
+	static constexpr bool is_atomic() { return true; }
 	
 	template<typename...>
 	using function = AtomicTerm;
@@ -46,12 +42,9 @@ namespace mpl {
     };
 
     template<template<typename...> class F>
-    struct term<atc::mpl::function<F> >
+    struct term<function<F> >
     {
-	enum
-	{
-	    is_atomic        = true
-	};
+	static constexpr bool is_atomic() { return true; }
 
 	template<typename... Args>
 	using function = F<Args...>;
@@ -63,10 +56,8 @@ namespace mpl {
 	{
 	    template<typename Other>
 	    using with = typename std::conditional<
-		std::is_same<T,
-			     atc::mpl::function<F>
-			     >::value,
-		atc::mpl::function<F>,
+		std::is_same<T, metafun::function<F> >::value,
+	        metafun::function<F>,
 		Other
 		>::type;	
 	};
@@ -75,10 +66,7 @@ namespace mpl {
     template<template<typename...> class F, typename... Subterms>
     struct term<F<Subterms...> >
     {
-	enum
-	{
-	    is_atomic = false
-	};
+	static constexpr bool is_atomic() { return false; }
 	
 	template<typename... OtherSubterms>
 	using function = F<OtherSubterms...>;
@@ -107,7 +95,6 @@ namespace mpl {
 	enum { value = sizeof...(Terms) };
     };
         
-} // namespace mpl
-} // namespace atc
+} // namespace metafun
 
 #endif //  ATC_MPL_SYNTAX_INC
