@@ -1,0 +1,46 @@
+#ifndef METAFUN_SET_HPP_INC
+#define METAFUN_SET_HPP_INC
+
+#include <list.hpp>
+#include <types.hpp>
+#include <type_traits>
+
+namespace metafun
+{
+    template<typename S, typename T>
+    struct and_
+    {
+	constexpr bool eval()
+	{
+	    return lazy_eval<T>( eval<S>() );
+	}
+    };
+    
+    
+    template<typename... Args>
+    struct set : hull<Args>...
+    {
+	using all = list<Args...>;
+	
+	template<typename T>
+	static constexpr bool contains()
+	{
+	    return std::is_base_of<hull<T>, set<Args...> >::value;
+	};
+
+	static constexpr int count() { return sizeof...(Args); }
+    };
+
+    template<typename... Args0, typename... Args1>
+    constexpr bool operator==( set<Args0...>, set<Args1...> )
+    {
+	return cond< bool_<sizeof...(Args0) == sizeof...(Args1)>,
+		     
+    }
+    
+
+	
+
+}
+
+#endif // METAFUN_SET_HPP_INC
