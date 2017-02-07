@@ -2,114 +2,69 @@
 #define ATC_MPL_LIST_INC
 
 #include "syntax.hpp"
+#include "functional.hpp"
 
 namespace metafun  {
-namespace list_dtl {
 
-    template<int n, typename... args>
-    struct at_;	
+    template<typename... > struct list;
     
-    template<typename arg0, typename... args>
-    struct at_<0, arg0, args...>
+    namespace list_dtl
     {
-	using type = arg0;
-    };
+	template<typename...> struct tail_;
+	
+	template<>
+	struct tail_<>  { using type = list<>; };
+	
+	template<typename H, typename... T>
+	struct tail_<H, T...> { using type = list<T...>; };
+    }
     
-    template<int n, typename arg0, typename... args>
-    struct at_<n, arg0, args...>
-    {
-	using type = typename at_<n-1, args...>::type;
-    };
+    // concatenate lists:
 
-    template<typename... Terms>
-    struct pop_front_;
-        
-    template<typename X, typename... Terms>
-    struct pop_front_<X, Terms...>
+    namespace list_dtl
     {
-	using type = terms<Terms...>;
-    };
-
-    // delete an element in the middle:
     
-    template<int, typename, typename, typename>
-    struct erase_aux;
-    
-    template<typename... left, typename X, typename... right>
-    struct erase_aux<0, terms<left...>, X, terms<right...> >
-    {
-	using type = terms<left..., right...>;
+	template<typename...> struct concatenate_;
+	
+	template<>
+	struct concatenate_<>
+	{
+	    using type = list<>;
     };
     
-    template<int n,
-	     typename... left,
-	     typename X,
-	     typename right0, typename... right>
-    struct erase_aux<n, terms<left...>, X, terms<right0, right...> >
+    template<typename... Args>
+    struct concatenate_<list<Args...> >
     {
-	using type = typename erase_aux<n-1,
-					terms<left..., X>,
-					right0,
-					terms<right...> >::type;
+	using type = list<Args...>;
     };
     
-    template<int, typename...>
-    struct erase_aux_;
-    
-    template<int n, typename arg0, typename... args>
-    struct erase_aux_<n, arg0, args...>
-    {
-	using type = typename erase_aux< n,
-					 terms<>,
-					 arg0,
-					 terms<args...> >::type;
-    };
-    
-    template<int n, typename... terms>
-    using erase_ = typename erase_aux_<n, terms...>::type;
-
-// concatenate lists:
-    
-    template<typename...> struct concatenate_;
-
-    template<>
-    struct concatenate_<>
-    {
-	using type = terms<>;
-    };
-    
-    template<template<typename...> class X, typename... Args>
-    struct concatenate_<X<Args...> >
-    {
-	using type = X<Args...>;
-    };
-    
-    template<template<typename...> class X,
-	     typename... Args0,
+    template<typename... Args0,
 	     typename... Args1,
 	     typename... OtherLists>
-    struct concatenate_<X<Args0...>, X<Args1...>, OtherLists...>
+    struct concatenate_<list<Args0...>, list<Args1...>, OtherLists...>
     {
-	using type = typename concatenate_<X<Args0..., Args1...>,
+	using type = typename concatenate_<list<Args0..., Args1...>,
 					   OtherLists...>::type;
     };
 
-    template<int n, typename Result, typename List>
-    struct generate_all_sublists_;
-    
 } // namespace list_dtl
 } // namespace metafun
 
-
 namespace metafun {
-    
+
     template<typename... Collections>
     using concatenate = typename list_dtl::concatenate_<Collections...>::type;
 
     template<typename... args> struct list;
 
+    template<typename List> 
+    using head = typename List::head;
+
+    template<typename List>
+    using tail = typename List::tail;
+    
     template<>
-    struct list
+    struct list<>
     {
 	using all = list<>;
 	
@@ -118,46 +73,66 @@ namespace metafun {
 
 	using tail = list<>;
 
-	using reverse = list<>;	    
-    };
-
-    
-    template<typename... args>
-    struct list
-    {
-	using all = list<args...>;
-	
-	template<template<typename...> class F>
-	using apply = F<args...>;
-      	
-	template<int n>
-	using at = typename list_dtl::at_<n, args...>::type;
-
-	template<int n>
-	using erase = typename list_dtl::erase_<n, args...>::template apply<list>;
-
-//	template<int n>
-//	using insert = ;
-
-//	template<int n>
-//	struct replace
-	
-	using head = at<0>;
-	using tail = erase<0>;
-
 	template<typename H>
-	using push_front = list<H, args...> ;
+	using push_back = list<H>;
 
 	template<typename T>
-	using push_back = list<args..., H>;
+	using push_front = list<T>;
+	
+	using reverse = list<>;	    
 
-	using pop_front = tail;
-	using pop_back = typename reverse::pop_front::reverse;
-	    
-	using reverse = typename tail::reverse::template push_back<head>;
+	template<template<typename> class Pred>
+	using select = list<>;
     };
+
+    namespace list_dtl { template<template<typename> class> struct selector_aux; }
+    
+    template<typename Head, typename... Tail>
+    struct list<Head, Tail...>
+    {
+	using all = list<Head, Tail...>;
+	
+	template<template<typename...> class F>
+	using apply = F<Head, Tail...>;
+
+	using head = Head;
+	using tail = list<Tail...>;
+	
+	template<int n>
+	using at = typename pow<metafun::tail, n>::template function<list<head, Tail...> >::head;
+
+	template<typename X>
+	using push_front = list<X, Head, Tail...> ;
+
+	template<typename X>
+	using push_back = list<Head, Tail..., X>;
+
+	using reverse = typename tail::reverse::template push_back<head>;
+
+	template<template<typename> class Pred>
+	using select = typename
+	    fold
+	    <
+	      list_dtl::selector_aux<Pred>::template operation,
+	      list<>
+	    >::template left<Head, Tail...>;
+    };
+
+    namespace list_dtl
+    {
+	template<template<typename> class Pred>
+	struct selector_aux
+	{
+	    template<typename List, typename Elem>
+	    using operation = typename cond< Pred<Elem>,
+					     lazy<List::template push_front, Elem>,
+//					     hull<List>, 
+					     hull<List> >::type;
+	};
+
+    }
+
     
 } // namespace metafun
-
 
 #endif // ATC_MPL_LIST_INC

@@ -50,7 +50,6 @@ namespace types_dtl {
 } // namespace types_dtl
 } // namespace metafun
 
-
 namespace metafun
 {
     // evaluates to a value x, 
@@ -68,16 +67,25 @@ namespace metafun
     using cond = typename std::conditional< eval<Cond>(), T, F>::type;
 
     // lazy evaluation    
-    template<typename... Args>
-    using lazy = typename types_dtl::lazy_<Args...>::desired_type;
+    namespace bound
+    { 
+	template<typename... Args>
+	using lazy = typename types_dtl::lazy_<Args...>::desired_type;
+    }
 
+    template<template<typename...> class F, typename... Args>
+    using lazy = bound::lazy< function<F>, Args...>;
+/*
     namespace unbound
     {
 	template<template<typename...> class F, typename... Args>
 	using lazy = typename metafun::types_dtl::lazy_<function<F>, Args...>::desired_type;
     }
+*/
 
     // Types
+    template<typename T> struct hull { using type = T; };
+
     template<typename T>
     struct type
     {
@@ -87,6 +95,8 @@ namespace metafun
 	    static constexpr T eval() { return t; }
 	};
 
+	struct hull { using type = T; };
+	
 	template<T... args>
 	struct sequence
 	{
@@ -101,9 +111,6 @@ namespace metafun
 		typename type<S>::template instance<static_cast<S>(args)...>
 		>;
 	};
-	
-//	template<bool b>
-//	using enable_if = typename std::enable_if<b, T>::type;
 
 	template<typename B>
 	using enable_if = typename std::enable_if< eval<B>(), T >::type;
@@ -115,84 +122,7 @@ namespace metafun
 
     using true_  = bool_<true>;
     using false_ = bool_<false>;	
-
     
-    /////////////// Folds:
-
-    namespace fold_dtl {
-	
-	template<template<typename, typename> class, typename...> struct foldr_;
-	
-	template<template<typename, typename> class F, typename Z>
-	struct foldr_<F, Z>
-	{
-	    using type = Z;
-	};
-	
-	template<template<typename, typename> class F,
-		 typename Z,
-		 typename X1, typename... XR>
-	struct foldr_<F, Z, X1, XR...>
-	{
-	    using type = F<X1, typename foldr_<F, Z, XR...>::type >;
-	};
-	
-	template<typename... Args>
-	struct fold_args;
-
-	template<>
-	struct fold_args<>
-	{
-	    template<typename T> using push_back = fold_args<T>;
-	    template<typename T> using push_front= fold_args<T>;
-
-	    using reverse = fold_args<>;
-	};
-
-	template<typename Arg0, typename... Args>
-	struct fold_args<Arg0, Args...>
-	{
-	    using reverse = typename fold_args<Args...>::template push_back<Arg0>;
-
-	    template<typename H>
-	    using push_front = fold_args<H, Arg0, Args...>;
-
-	    template<typename T>
-	    using push_back = fold_args<Arg0, Args..., T>;
-
-	    template<template<typename...> class F>
-	    using apply = F<Arg0, Args...>;
-	};
-
-	
-	template<template<typename, typename> class Function>
-	struct opposite
-	{
-	    template<typename A, typename B>
-	    using operation = Function<B, A>;
-	};
-
-    } // namespace fold_dtl
-
-    template<typename Function, typename Z>
-    struct fold
-    {
-    private:
-	using OppositeFunction = function
-	<
-	  fold_dtl::opposite< term<Function>::template function >::template operation
-	>;
-
-    public:
-	template<typename... Args>
-	using right = typename fold_dtl::foldr_<term<Function>::template function, Z, Args...>::type;
-
-	template<typename... Args>
-	using left = typename
-	    fold_dtl::fold_args<Args...>::reverse::template push_front<Z>::template push_front<OppositeFunction>::template apply< fold_dtl::foldr_ >;
-	    
-    };
-          
 } // namespace metafun
 
 #endif // ATC_MPL_TYPES_INC
