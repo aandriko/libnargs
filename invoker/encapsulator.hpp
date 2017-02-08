@@ -1,7 +1,9 @@
 #ifndef ATC_ENCAPSULATOR_HPP_INC
 #define ATC_ENCAPSULATOR_HPP_INC
 
+#include <functional>
 #include <type_traits>
+#include <memory>
 #include <utility>
 #include "signature.hpp"
 
@@ -11,7 +13,23 @@ namespace invoker_dtl {
     template<typename> struct capsule;
 
     template<typename T>
-    struct capsule<T&> { };
+    struct capsule<T&>
+    {
+	explicit capsule(T & ref) : ref_(ref) { }
+
+	T& ref_;
+	
+	T& leave() const { return ref_; }
+	
+	template<typename S
+		 , typename = typename
+		 std::enable_if<std::is_convertible<T&, S&>::value>::type>
+	operator S&& ()
+	{
+//	    return static_cast<S&&>(leave()); }
+	    return static_cast<S&&>(ref_);
+	}
+    };
     
     template<typename T>
     struct capsule<T const&&>
@@ -45,14 +63,19 @@ namespace invoker_dtl {
 	operator S&()  { return const_cast<S&>(static_cast<S const&>(leave())); }
 
     };
-
+    
     template<typename T>
-    using rval_referenced = typename std::remove_reference<T>::type &&;
+    using rval_referenced = //typename std::remove_reference<T>::type &&;
+	typename std::conditional< std::is_same<typename std::decay<T>::type const&, T>::value,
+			  typename std::decay<T>::type const&&,
+			  T&&>::type;
+    
+			  
     
     template<typename... RvalRefArgs>
     struct encapsulator : public capsule<RvalRefArgs >...
     {
-	explicit encapsulator(RvalRefArgs... args) : capsule<RvalRefArgs>(std::move(args))... { }
+	explicit encapsulator(RvalRefArgs... args) : capsule<RvalRefArgs>(std::forward<RvalRefArgs>(args))... { } // used to be std::move
 
 
 	template<typename... PermutedRvalRefArgs>
@@ -119,19 +142,38 @@ namespace invoker_dtl {
 	X operator()(Args&&... args) const { return X(std::forward<Args>(args)...); } 
     };
 
+    template<typename T>
+    using rval_referenced_ =
+	typename std::conditional<
+
+	std::is_same<typename std::decay<T>::type const&, T>::value,
+
+	typename std::decay<T>::type const&&,
+
+	typename std::conditional
+	<
+	    std::is_same<typename std::decay<T>::type &, T>::value,
+	    T &,
+
+	    typename std::decay<T>::type&&
+	> ::type
+	>::type;
+
     template<typename... Args>
     struct invoker
     {
 	template<typename F, typename... PermutedArgs>
 	auto operator()(F&& f, PermutedArgs&&... permuted_args ) const
+	//	    auto operator()(F f, PermutedArgs... permuted_args ) const
 	{
-	    return encapsulator<rval_referenced<Args>...>(
-		encapsulator<rval_referenced<PermutedArgs>...>(
-		    static_cast<rval_referenced<PermutedArgs> >(permuted_args)... ) ).invoke_(std::forward<F>(f));
+	    //   return encapsulator<rval_referenced<Args>...>(
+	    return encapsulator<Args...>(
+		encapsulator<rval_referenced_<PermutedArgs&&>...>(
+		    static_cast<rval_referenced_<PermutedArgs&&> >(permuted_args)... ) ).invoke_(std::forward<F>(f));
 
 	}
     };
-    
+       
 } // namesapce invoker_dtl
 
     template<typename F, typename... Args>
@@ -139,7 +181,8 @@ namespace invoker_dtl {
     {
 	using invoker = invoker_dtl::invoker<invoker_dtl::rval_referenced<Args>...>;
 
-	return invoker()(std::forward<F>(f), std::forward<Args>(args)...);
+	return invoker()(std::forward<F>(f), //std::forward<Args>(args)...);
+			 static_cast<invoker_dtl::rval_referenced<Args> >(args)...);
     }
 
 } // namespace metafun

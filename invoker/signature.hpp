@@ -112,44 +112,4 @@ namespace signature_dtl {
 } // namespace invoker_dtl   
 } // namespace metafun       
 
-
-
 #endif //  METAFUN_SIGNATURE_COMPARISON_INC
-
-
-/*
-template<typename T1, typename T2>
-    struct first_fits_second
-    {
-    };
-
-    template<typename...> struct arg_list;
-
-    template<template<typename, typename> class Pred, typename, typename>
-    struct for_all;
-
-    template<template<typename, typename> class Pred, typename... Args>
-    struct for_all<Pred, arg_list<>, arg_list<Args...> >
-    {
-	enum { value = true };
-    };
-
-    template<template<typename, typename> class Pred,
-	     typename Arg0, typename Arg1, typename... Other0, typename... Other1>
-    struct for_all<Pred, arg_list<Arg0, Other0...>, arg_list<Arg1, Other1...> >
-    {
-	enum { value = Pred<Arg0, Arg1>::value && for_all<Pred, arg_list<Other0...>, arg_list<Other1...> >::value };
-    };
-
-    template<typename, typename>
-    struct first_arg_list_fits_second_arg_list;
-
-    template<typename... Args1, typename... Args2>
-    struct first_arg_list_fits_second_arg_list<arg_list<Args1...>, arg_list<Args2...> >
-    {
-	enum { value =
-	       (sizeof...(Args1) == sizeof...(Args2))
-	       &&
-	       for_all<first_fits_second, arg_list<Args1...>, arg_list<Args2...> >::value };
-    };
-*/

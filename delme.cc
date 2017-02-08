@@ -49,11 +49,7 @@ struct rearrange
     };
 
 
-template<typename Key, typename Value>
-
-
-struct map ;
-
+#include <iostream>
 
 
 int main()
@@ -78,13 +74,20 @@ int main()
 	"");
 
     
-//    metafun::invoke([](int x, char* y){}, nullptr, 3);
-    invoker_dtl::invoker<int&&, double&&>()([](int&&, double){}, 2.3, 2 );
-
-    metafun::invoker_dtl::capsule<int&> c;
-    metafun::invoker_dtl::capsule<int const&> c2;
+// metafun::invoke([](int x, char* y){}, nullptr, 3);
+    int sth{-1};
+    invoker_dtl::invoker< const int&, double&&>()([]( const int& x, double&& y)
+						 {
+						     std::cout << x << std::endl
+							       << y << std::endl;
+						 }, (int)sth, (double&&)2.3 );
+    
+//    metafun::invoker_dtl::capsule<int&> c;
+//    metafun::invoker_dtl::capsule<int const&> c2;
     metafun::invoker_dtl::capsule<int const&&> c3(4);
     metafun::invoker_dtl::capsule<int &&> c4(3);
-	
+
+
+    
 }
     
