@@ -11,6 +11,9 @@ namespace invoker_dtl {
     template<typename> struct capsule;
 
     template<typename T>
+    struct capsule<T&> { };
+    
+    template<typename T>
     struct capsule<T const&&>
     {
 	explicit capsule(T       && ref) : ref_(std::move(ref)) { }	
@@ -23,7 +26,8 @@ namespace invoker_dtl {
 	template<typename S
 		 , typename = typename std::enable_if<std::is_convertible<T&, S&>::value >::type
 		 >
-	operator S const&()  { return const_cast<S&>(static_cast<S const&>(leave())); }
+	//	operator S const&()  { return const_cast<S&>(static_cast<S const&>(leave())); }
+	operator S const&()  { return static_cast<S const&>(leave()); }
     };
     
     template<typename T>

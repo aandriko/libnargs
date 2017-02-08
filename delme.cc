@@ -79,7 +79,12 @@ int main()
 
     
 //    metafun::invoke([](int x, char* y){}, nullptr, 3);
-    invoker_dtl::invoker<int&&, double&&>()([](int&, double&&){}, 2.3, 2 );
+    invoker_dtl::invoker<int&&, double&&>()([](int&&, double){}, 2.3, 2 );
+
+    metafun::invoker_dtl::capsule<int&> c;
+    metafun::invoker_dtl::capsule<int const&> c2;
+    metafun::invoker_dtl::capsule<int const&&> c3(4);
+    metafun::invoker_dtl::capsule<int &&> c4(3);
 	
 }
     
