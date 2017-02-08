@@ -13,19 +13,27 @@ namespace signature_dtl {
     {
 	enum
 	{
-	    value = std::is_convertible<T1, T2>::value
-/*
+
 	    value =
 	    std::is_convertible<typename std::decay<T1>::type&,
 	                        typename std::decay<T2>::type&>::value
 
-	    &&
-	     ( ! std::is_const<typename std::remove_reference<T1>::type>::value
-	       ||
-	       std::is_const<typename std::remove_reference<T2>::type>::value )
-*/
-	};
 
+	    &&
+
+	    ! (
+		// T2 lvalue reference to non-const:
+		(
+		    std::is_lvalue_reference<T2>::value &&
+		    ! (std::is_const<typename std::remove_reference<T2>::type>::value) 
+		)
+	      &&
+		( ! std::is_reference<T1>::value
+		  ||
+		  (std::is_reference<T1>::value && std::is_const<typename std::remove_reference<T1>::type>::value )
+		)
+	     )
+	};
     };
 
     template<typename X, typename List2>
@@ -47,7 +55,7 @@ namespace signature_dtl {
 
     template<typename Number, typename Count>
     using accumulate =
-	typename Number::template rebind< eval<Number>() + eval<Count>() >;
+	typename metafun::type<int>::instance< metafun::eval<Number>() + metafun::eval<Count>() >;
 
     template<typename List1, typename List2>
     struct first_signature_converts_to_second;
@@ -99,10 +107,12 @@ namespace signature_dtl {
 	       metafun::eval<no_more_than_once_test>();
 	}
     };
-    	
-} // namespace metafun       
-} // namespace invoker_dtl   
+
 } // namespace signature_dtl  
+} // namespace invoker_dtl   
+} // namespace metafun       
+
+
 
 #endif //  METAFUN_SIGNATURE_COMPARISON_INC
 
