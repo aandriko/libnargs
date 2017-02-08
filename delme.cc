@@ -57,12 +57,11 @@ int main()
 //    rearrange<int, double*>::with_order< int_<1>, int_<0> >::at<0> x = nullptr;
     using namespace metafun;
 	
-    list_dtl::selector_aux<is_even>::operation< list<>, type<int>::instance<2>> t;
+//    list_dtl::selector_aux<is_even>::operation< list<>, type<int>::instance<2>> t;
 //    t = 5;
-    metafun::type<int>::sequence<1,2,3,4>::apply<metafun::list>::select<is_even>
-	l ;
+//    metafun::type<int>::sequence<1,2,3,4>::apply<metafun::list>::select<is_even> l ;
 
-    decltype ( metafun::set<int, char, double>() == metafun::set<char, int, double>() ) x ;
+//    decltype ( metafun::set<int, char, double>() == metafun::set<char, int, double>() ) x ;
 
 
     static_assert(

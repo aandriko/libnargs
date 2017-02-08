@@ -166,11 +166,16 @@ namespace invoker_dtl {
 	auto operator()(F&& f, PermutedArgs&&... permuted_args ) const
 	//	    auto operator()(F f, PermutedArgs... permuted_args ) const
 	{
-	    //   return encapsulator<rval_referenced<Args>...>(
+	    encapsulator<Args...> e(
+		encapsulator<rval_referenced_<PermutedArgs&&>...>(
+		    static_cast<rval_referenced_<PermutedArgs&&> >(permuted_args)... ) );
+	    return e.invoke_(std::forward<F>(f));
+/*
+//   return encapsulator<rval_referenced<Args>...>(
 	    return encapsulator<Args...>(
 		encapsulator<rval_referenced_<PermutedArgs&&>...>(
 		    static_cast<rval_referenced_<PermutedArgs&&> >(permuted_args)... ) ).invoke_(std::forward<F>(f));
-
+*/
 	}
     };
        

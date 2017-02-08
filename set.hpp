@@ -36,7 +36,7 @@ namespace logic   {
     using or_ = bool_<logic_dtl::or_<S, static_cast<bool>(metafun::eval<T>()) >::eval() >;
     
     template<typename... Args>
-    using all = typename metafun::fold<and_, true_>::template right<Args...> ;
+    using all = typename metafun::fold<and_, true_>::template right<Args...>;
 
     template<typename... Args>
     using exists = typename metafun::fold<or_, false_>::template right<Args...> ;
@@ -55,7 +55,7 @@ namespace metafun {
 	static constexpr bool contains()
 	{
 	    return std::is_base_of<hull<T>, set<Args...> >::value;
-	};
+	}
 
 	static constexpr int count() { return sizeof...(Args); }
     };
