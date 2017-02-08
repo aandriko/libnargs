@@ -30,11 +30,18 @@ namespace signature_dtl {
     using accumulate =
 	typename metafun::type<int>::instance< metafun::eval<Number>() + metafun::eval<Count>() >;
 
-    template<typename List1, typename List2>
-    struct first_signature_converts_to_second;
+    template<typename List1, typename List2, bool list_sizes_equal>
+    struct first_signature_converts_to_second_;
+    
 
-    template<>
-    struct first_signature_converts_to_second<metafun::list<>, metafun::list<> >
+    template<typename List1, typename List2>
+    struct first_signature_converts_to_second_<List1, List2, false>
+    {
+	static constexpr bool eval() { return false; }
+    };
+    
+    template<template<typename...> class List>
+    struct first_signature_converts_to_second_<List<>, List<>, true>
     {
 	static constexpr bool eval() { return true; }
     };
@@ -42,13 +49,12 @@ namespace signature_dtl {
     template<typename T>
     using no_more_often_than_once =
 	metafun::bool_< (eval<T>() <= 1) >;
-    
-    template<typename... Args1, typename... Args2>
-    struct first_signature_converts_to_second< metafun::list<Args1...>,
-					       metafun::list<Args2...> >
+
+    template<template<typename...> class List, typename... Args1, typename... Args2>
+    struct first_signature_converts_to_second_< List<Args1...>,
+						List<Args2...>,
+						true>
     {
-	static_assert(sizeof...(Args1) == sizeof...(Args2), "");
-	
 	static constexpr bool eval()
 	{
 	    using intermediate_result =
@@ -73,14 +79,28 @@ namespace signature_dtl {
 	       > ::
 	       
 	       template apply<metafun::logic::all>;
-	   
+
 	   return
 	       (metafun::eval<total_count>() == sizeof...(Args2))
 	       &&
 	       metafun::eval<no_more_than_once_test>();
+
 	}
     };
 
+    template<typename List1, typename List2>
+    struct first_signature_converts_to_second;
+
+    template<template<typename...> class List, typename... Args1, typename... Args2>
+    struct first_signature_converts_to_second<List<Args1...>, List<Args2...> >
+
+	: public first_signature_converts_to_second_<List<Args1...>,
+						     List<Args2...>,
+						     sizeof...(Args1) == sizeof...(Args2)
+						    >
+    { };
+
+    
 } // namespace signature_dtl  
 } // namespace invoker_dtl   
 } // namesapce metafun

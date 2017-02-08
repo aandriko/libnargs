@@ -35,6 +35,13 @@ namespace types_dtl {
 	using type = F<Args...>;
     };
 
+    template<template<typename...> class F>
+    struct lazy_<function<F> >
+    {
+	using desired_type = lazy_<function<F> >;
+	using type = F<>;
+    };
+        
     template<typename T>
     struct lazy_<T>
     {
