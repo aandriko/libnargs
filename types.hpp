@@ -1,4 +1,5 @@
 #ifndef ATC_MPL_TYPES_INC
+#define ATC_MPL_TYPES_INC
 
 #include <type_traits>
 #include "syntax.hpp"
@@ -93,6 +94,9 @@ namespace metafun
 	struct instance
 	{
 	    static constexpr T eval() { return t; }
+
+	    template<T t2>
+	    using rebind = typename type<T>::template instance<t2>;
 	};
 
 	struct hull { using type = T; };

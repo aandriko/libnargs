@@ -71,6 +71,9 @@ namespace metafun {
 	template<template<typename...> class F>
 	using apply = F<>;
 
+	template<template<typename> class>
+	using apply_pointwise = list<>;
+	
 	using tail = list<>;
 
 	template<typename H>
@@ -94,6 +97,9 @@ namespace metafun {
 	
 	template<template<typename...> class F>
 	using apply = F<Head, Tail...>;
+
+	template<template<typename> class F>
+	using apply_pointwise = list<F<Head>, F<Tail>...>;
 
 	using head = Head;
 	using tail = list<Tail...>;
