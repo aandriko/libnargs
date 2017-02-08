@@ -5,7 +5,7 @@
 #include <type_traits>
 #include <memory>
 #include <utility>
-#include "signature.hpp"
+#include "signature_comparison.hpp"
 
 namespace metafun     {
 namespace invoker_dtl {
@@ -181,6 +181,7 @@ namespace invoker_dtl {
        
 } // namesapce invoker_dtl
 
+    /*
     template<typename F, typename... Args>
     auto invoke(F&& f, Args&&... args)
     {
@@ -189,6 +190,7 @@ namespace invoker_dtl {
 	return invoker()(std::forward<F>(f), //std::forward<Args>(args)...);
 			 static_cast<invoker_dtl::rval_referenced<Args> >(args)...);
     }
+    */
 
 } // namespace metafun
     

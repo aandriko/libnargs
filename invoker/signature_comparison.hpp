@@ -3,38 +3,11 @@
 
 #include "../list.hpp"
 #include "../set.hpp"
+#include <type_traits>
 
 namespace metafun       {
 namespace invoker_dtl   {
 namespace signature_dtl { 
-
-    template<typename T1, typename T2>
-    struct first_converts_to_second
-    {
-	enum
-	{
-
-	    value =
-	    std::is_convertible<typename std::decay<T1>::type&,
-	                        typename std::decay<T2>::type&>::value
-
-
-	    &&
-
-	    ! (
-		// T2 lvalue reference to non-const:
-		(
-		    std::is_lvalue_reference<T2>::value &&
-		    ! (std::is_const<typename std::remove_reference<T2>::type>::value) 
-		)
-	      &&
-		( ! std::is_reference<T1>::value
-		  ||
-		  (std::is_reference<T1>::value && std::is_const<typename std::remove_reference<T1>::type>::value )
-		)
-	     )
-	};
-    };
 
     template<typename X, typename List2>
     struct count_fits;
@@ -48,7 +21,7 @@ namespace signature_dtl {
     template<typename X, typename H, typename... T>
     struct count_fits<X, metafun::list<H, T...> >
     {
-	enum { value = first_converts_to_second<X, H>::value
+	enum { value = std::is_convertible<X, H>::value
 	       +
 	       count_fits<X, metafun::list<T...> >::value };
     };
@@ -110,6 +83,6 @@ namespace signature_dtl {
 
 } // namespace signature_dtl  
 } // namespace invoker_dtl   
-} // namespace metafun       
+} // namesapce metafun
 
 #endif //  METAFUN_SIGNATURE_COMPARISON_INC

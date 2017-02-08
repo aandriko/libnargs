@@ -3,7 +3,7 @@
 #include "list.hpp"
 #include "set.hpp"
 #include "invoker/encapsulator.hpp"
-#include "invoker/signature.hpp"
+#include "invoker/signature_comparison.hpp"
 
 /*
 template<int n>
@@ -51,6 +51,8 @@ struct rearrange
 
 #include <iostream>
 
+void foo(int&& x) { }
+
 
 int main()
 {
@@ -67,8 +69,9 @@ int main()
     static_assert(
 	metafun::invoker_dtl::signature_dtl::first_signature_converts_to_second
 	<
-	metafun::list<int&, double &&, char >,
-	metafun::list<char, int&&,  double const&&>
+	metafun::list<double&&, char*&&>,
+	metafun::list<char*, double&& >
+	
 	>::eval() == true,
 	"");
 
@@ -86,7 +89,7 @@ int main()
     metafun::invoker_dtl::capsule<int const&&> c3(4);
     metafun::invoker_dtl::capsule<int &&> c4(3);
 
-
+    foo(2.4);
     
 }
     
