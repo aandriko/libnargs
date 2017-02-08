@@ -3,6 +3,7 @@
 
 #include <type_traits>
 #include <utility>
+#include "signature.hpp"
 
 namespace metafun     {
 namespace invoker_dtl {
@@ -80,17 +81,24 @@ namespace invoker_dtl {
 	    return encapsulator<rval_referenced<permuted>...>( this->access<permuted>()...).template permute_and_invoke<permuted...>(std::forward<F>(f));
 	}
 
-	/*
+	
 	// realise the identity permutation (no permuting at all)
 	template<typename... permuted
 		 , typename F
-		 , typename = typename std::enable_if<first_arg_list_fits_second_arg_list<arg_list<permuted...>, arg_list<RvalArgs...> >::value>::type
-		 >
+		 , typename = typename std::enable_if
+		 <
+//first_arg_list_fits_second_arg_list<arg_list<permuted...>, arg_list<RvalArgs...> >::value
+		     signature_dtl::first_signature_converts_to_second
+		      <
+			 metafun::list<permuted...>,
+			 metafun::list<RvalRefArgs...>
+		      >::eval()
+		 >::type >
         auto permute_and_invoke_(F&& f, std::nullptr_t)
 	{
-	    return std::forward<F>(f)(access<RvalArgs>()...);
+	    return std::forward<F>(f)(access<RvalRefArgs>()...);
 	}
-	*/
+	
 
     public:
 	template<typename F>
