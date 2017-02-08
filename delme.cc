@@ -4,6 +4,7 @@
 #include "set.hpp"
 #include "invoker/encapsulator.hpp"
 #include "invoker/signature_comparison.hpp"
+#include "invoker/signatures.hpp"
 
 /*
 template<int n>
@@ -83,6 +84,12 @@ int main()
 						     std::cout << x << std::endl
 							       << y << std::endl;
 						 }, (int)sth, (double&&)2.3 );
+
+    signature<int&, char*, char**&&>::invoke([](int, char*, char**&&) {},
+					     (char**)(nullptr),
+					     7,
+					     (char*)(nullptr));
+	
     
 //    metafun::invoker_dtl::capsule<int&> c;
 //    metafun::invoker_dtl::capsule<int const&> c2;
@@ -90,6 +97,9 @@ int main()
     metafun::invoker_dtl::capsule<int &&> c4(3);
 
     foo(2.4);
-    
+    metafun::signatures<
+//	metafun::signature<int, char*>
+//	, metafun::signature<>
+	> s;
 }
     
