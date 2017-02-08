@@ -1,5 +1,5 @@
-#ifndef ATC_ENCAPSULATOR_HPP_INC
-#define ATC_ENCAPSULATOR_HPP_INC
+#ifndef METAFUN_INVOKER_ENCAPSULATOR_INC
+#define METAFUN_INVOKER_ENCAPSULATOR_INC
 
 #include <functional>
 #include <type_traits>
@@ -150,6 +150,7 @@ namespace invoker_dtl {
 
 	typename std::decay<T>::type const&&,
 
+	/*
 	typename std::conditional
 	<
 	    std::is_same<typename std::decay<T>::type &, T>::value,
@@ -157,6 +158,8 @@ namespace invoker_dtl {
 
 	    typename std::decay<T>::type&&
 	> ::type
+	*/
+	T&&
 	>::type;
 
     template<typename... Args>
@@ -170,28 +173,10 @@ namespace invoker_dtl {
 		encapsulator<rval_referenced_<PermutedArgs&&>...>(
 		    static_cast<rval_referenced_<PermutedArgs&&> >(permuted_args)... ) );
 	    return e.invoke_(std::forward<F>(f));
-/*
-//   return encapsulator<rval_referenced<Args>...>(
-	    return encapsulator<Args...>(
-		encapsulator<rval_referenced_<PermutedArgs&&>...>(
-		    static_cast<rval_referenced_<PermutedArgs&&> >(permuted_args)... ) ).invoke_(std::forward<F>(f));
-*/
 	}
     };
        
 } // namesapce invoker_dtl
-
-    /*
-    template<typename F, typename... Args>
-    auto invoke(F&& f, Args&&... args)
-    {
-	using invoker = invoker_dtl::invoker<invoker_dtl::rval_referenced<Args>...>;
-
-	return invoker()(std::forward<F>(f), //std::forward<Args>(args)...);
-			 static_cast<invoker_dtl::rval_referenced<Args> >(args)...);
-    }
-    */
-
 } // namespace metafun
     
-#endif // ATC_ENCAPSULATOR_HPP_INC
+#endif // METAFUN_INVOKER_ENCAPSULATOR_INC
