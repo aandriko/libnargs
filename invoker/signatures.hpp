@@ -85,7 +85,52 @@ namespace signature_dtl {
 	    >
 	>() == sizeof...(Signatures);
     }
-	           
+
+
+    // For a signature 'Signature' find the unique signature X among the
+    // signatures listed in Candidates..., which is the unique one determined
+    // by the property that 'Signature' can be transformed to X, provided that
+    // X exists.
+    template<typename Signature, typename... Candidates>
+    struct pick_candidate;
+
+    template<typename Signature>
+    struct pick_candidate<Signature>
+    {
+
+	static_assert( std::is_same<Signature, signature<> >::value,
+		       "The proposed function call lacks a valid signature.");
+	using result = Signature;
+    };
+        
+    template<typename Signature, typename Candidate>
+    struct pick_candidate<Signature, Candidate>
+    {
+	static_assert( eval
+		       < invoker_dtl::signature_dtl::
+		         first_signature_converts_to_second<Signature, Candidate>()
+		       >(), "The proposed function call lacks a valid signature.");
+	using result = Candidate;
+    };
+    
+    template<typename Signature, typename H, typename... T>
+    struct pick_candidate<Signature, H, T...>
+    {
+	template<typename... Args>
+	using alias_to_pick_candidate = pick_candidate<Signature, H, T...>;
+	
+	using result =
+	    typename std::conditional
+	    <
+	      invoker_dtl::signature_dtl::
+	      first_signature_converts_to_second<Signature, H>::eval(),
+
+	      hull<H>,
+
+	      lazy<alias_to_pick_candidate, Signature, T...>
+	    >::type::type;
+    };
+		
 } // namespace signature_dtl
 } // namespace metafun
 
@@ -96,6 +141,14 @@ namespace metafun
     {
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
+
+	template<typename F, typename... Args>
+	static constexpr auto invoke(F&& f, Args&&... args)
+	{
+	    using sig = typename signature_dtl::pick_candidate< list<Args&&...>,
+								Signatures...>::result;
+	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+	}
     };
 }
 

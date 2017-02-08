@@ -50,9 +50,11 @@ namespace signature_dtl {
     using no_more_often_than_once =
 	metafun::bool_< (eval<T>() <= 1) >;
 
-    template<template<typename...> class List, typename... Args1, typename... Args2>
-    struct first_signature_converts_to_second_< List<Args1...>,
-						List<Args2...>,
+    template<template<typename...> class List1, ///urspruenglich nur ein parameter List
+	     template<typename...> class List2,
+	     typename... Args1, typename... Args2>
+    struct first_signature_converts_to_second_< List1<Args1...>,
+						List2<Args2...>,
 						true>
     {
 	static constexpr bool eval()
@@ -89,8 +91,19 @@ namespace signature_dtl {
     };
 
     template<typename List1, typename List2>
-    struct first_signature_converts_to_second;
+    using first_signature_converts_to_second
+    = first_signature_converts_to_second_
+      <
+	List1,
 
+	List2,
+
+	int(metafun::term<List1>::subterms::count) ==
+	int(metafun::term<List2>::subterms::count)
+       >;
+			
+
+    /*
     template<template<typename...> class List, typename... Args1, typename... Args2>
     struct first_signature_converts_to_second<List<Args1...>, List<Args2...> >
 
@@ -99,7 +112,7 @@ namespace signature_dtl {
 						     sizeof...(Args1) == sizeof...(Args2)
 						    >
     { };
-
+    */
     
 } // namespace signature_dtl  
 } // namespace invoker_dtl   

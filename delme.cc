@@ -63,7 +63,29 @@ int main()
 	invoker_dtl::signature_dtl::first_signature_converts_to_second_<
 	    list<int, double*, double**>, list<int, double*>, true >::eval()
 	      << std::endl;
-	
+
+
+    struct s1 { };
+    struct s2 : public s1 { };
+    
+    metafun::signatures
+    <
+	signature<int, s1>,
+	signature<int, double*, double**>
+    >::invoke
+	(
+	    [](int x, s1){ std::cout << x << std::endl; },
+	    42,
+	    s2{}
+	);
+
+    std::cout << std::boolalpha
+	      << bool(std::is_convertible<int const&&, double&&>::value)
+	      << std::endl;
+    
+//    metafun::invoker_dtl::signature_dtl::first_signature_converts_to_second<metafun::list<int &&, double *&&>, metafun::signature<int, double *> >::eval();
+    
+    
     /*
     std::cout << 
 	invoker_dtl::signature_dtl::first_signature_converts_to_second_<
