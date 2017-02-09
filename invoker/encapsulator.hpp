@@ -6,6 +6,7 @@
 #include <memory>
 #include <utility>
 #include "signature_comparison.hpp"
+#include "../nargs.hpp"
 
 namespace metafun     {
 namespace invoker_dtl {
@@ -13,21 +14,70 @@ namespace invoker_dtl {
     template<typename> struct capsule;
 
     template<typename T>
+    constexpr bool not_narg_(...) { return true; }
+
+    template<typename T,
+	     typename = typename std::enable_if<
+		 std::is_same< metafun::function< terms<T>::template apply >,
+			       metafun::function< metafun::nargs::wrapper > >
+		 ::value >::type>
+    constexpr
+    bool not_narg_(std::nullptr_t) { return false; }
+
+    template<typename T>
+    constexpr 
+    bool not_narg() { return not_narg_<T>(nullptr); }
+    
+    // remove wrapper form nargs if necessary
+
+    template<typename Key, typename Element>
+    Element const& remove_narg_wrapper (metafun::nargs::wrapper<Key, Element> const& x)
+    {
+	return static_cast<Element const&>(x);
+    }
+
+    template<typename Key, typename Element>
+    Element & remove_narg_wrapper (metafun::nargs::wrapper<Key, Element> & x)
+    {
+	return static_cast<Element &>(x);
+    }
+
+    template<typename Key, typename Element>
+    Element && remove_narg_wrapper (metafun::nargs::wrapper<Key, Element>&& x)
+    {
+	return static_cast<Element &&>(x);
+    }
+
+    template<typename Key, typename Element>
+    Element const&& remove_narg_wrapper (metafun::nargs::wrapper<Key, Element> const&& x)
+    {
+	return static_cast<Element const &&>(x);
+    }
+
+    // T is not a named argument:
+    template<typename T,
+	     typename = typename std::enable_if< not_narg<T>() >::type >
+    T&& remove_narg_wrapper(T&& t)
+    {
+	return std::forward<T>(t);
+    }
+        
+    template<typename T>
     struct capsule<T&>
     {
 	explicit capsule(T & ref) : ref_(ref) { }
 
 	T& ref_;
 	
-	T& leave() const { return ref_; }
+//	T& leave() const { return ref_; }
+	auto& leave() const { return remove_narg_wrapper(ref_); }
 	
 	template<typename S
 		 , typename = typename
 		 std::enable_if<std::is_convertible<T&, S&>::value>::type>
 	operator S&& ()
 	{
-//	    return static_cast<S&&>(leave()); }
-	    return static_cast<S&&>(ref_);
+	    return static_cast<S&&>(ref_); // leave()? 
 	}
     };
     
@@ -37,7 +87,8 @@ namespace invoker_dtl {
 	explicit capsule(T       && ref) : ref_(std::move(ref)) { }	
 	explicit capsule(T const && ref) : ref_(std::move(ref)) { }
 
-	T const && leave() const { return std::move(ref_); }
+//	T const && leave() const { return std::move(ref_); }
+	auto const && leave() const { return remove_narg_wrapper(std::move(ref_)); }
 	T const && ref_;
 
 
@@ -52,10 +103,18 @@ namespace invoker_dtl {
     struct capsule<T&&> : public capsule<T const&&>
     {
 	explicit capsule(T&& ref) : capsule<T const&&>(static_cast<T const&&>(ref)) { }
+/*
 	T&& leave() const
 	{
 	    return const_cast<T&&>( capsule<T const&&>::leave() );
 	}
+*/
+	
+	auto && leave() const
+	{
+	    return remove_narg_wrapper(const_cast<T&&>(this->ref_));
+	}
+	
 
 	template<typename S
 		 , typename = typename std::enable_if<std::is_convertible<T&, S&>::value >::type
@@ -70,8 +129,20 @@ namespace invoker_dtl {
 			  typename std::decay<T>::type const&&,
 			  T&&>::type;
     
-			  
-    
+    template<typename T>
+    auto forward_(T&& t)
+    {
+	using return_type = typename
+	    std::conditional<std::is_lvalue_reference<T&&>::value,
+
+			     std::reference_wrapper<
+				 typename std::remove_reference<T&&>::type>,
+
+			     T && >::type;
+
+	return return_type(std::forward<T>(t));
+    }
+
     template<typename... RvalRefArgs>
     struct encapsulator : public capsule<RvalRefArgs >...
     {
@@ -114,7 +185,6 @@ namespace invoker_dtl {
 		 , typename F
 		 , typename = typename std::enable_if
 		 <
-//first_arg_list_fits_second_arg_list<arg_list<permuted...>, arg_list<RvalArgs...> >::value
 		     signature_dtl::first_signature_converts_to_second
 		      <
 			 metafun::list<permuted...>,
@@ -149,16 +219,7 @@ namespace invoker_dtl {
 	std::is_same<typename std::decay<T>::type const&, T>::value,
 
 	typename std::decay<T>::type const&&,
-
-	/*
-	typename std::conditional
-	<
-	    std::is_same<typename std::decay<T>::type &, T>::value,
-	    T &,
-
-	    typename std::decay<T>::type&&
-	> ::type
-	*/
+	
 	T&&
 	>::type;
 
@@ -166,8 +227,8 @@ namespace invoker_dtl {
     struct invoker
     {
 	template<typename F, typename... PermutedArgs>
-	auto operator()(F&& f, PermutedArgs&&... permuted_args ) const
-	//	    auto operator()(F f, PermutedArgs... permuted_args ) const
+	//	auto operator()(F&& f, PermutedArgs&&... permuted_args ) const
+	auto operator()(F f, PermutedArgs... permuted_args ) const
 	{
 	    encapsulator<Args...> e(
 		encapsulator<rval_referenced_<PermutedArgs&&>...>(

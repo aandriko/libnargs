@@ -21,7 +21,28 @@ namespace signature_dtl {
     template<typename X, typename H, typename... T>
     struct count_fits<X, metafun::list<H, T...> >
     {
-	enum { value = std::is_convertible<X, H>::value
+	using decay_X = typename std::decay<X>::type;
+	enum { value =
+	       bool(
+		   
+		   std::is_convertible<X, H>::value
+
+		   &&
+
+		   !
+		   (
+		       ( std::is_same< decay_X const&, X>::value
+		       ||
+		       std::is_same< decay_X const*, X>::value )
+		     &&
+		       ( std::is_same< decay_X &, X>::value
+		       ||
+		       std::is_same< decay_X *, X>::value )
+		       )		  
+
+		   )
+
+	       
 	       +
 	       count_fits<X, metafun::list<T...> >::value };
     };
@@ -101,19 +122,7 @@ namespace signature_dtl {
 	int(metafun::term<List1>::subterms::count) ==
 	int(metafun::term<List2>::subterms::count)
        >;
-			
-
-    /*
-    template<template<typename...> class List, typename... Args1, typename... Args2>
-    struct first_signature_converts_to_second<List<Args1...>, List<Args2...> >
-
-	: public first_signature_converts_to_second_<List<Args1...>,
-						     List<Args2...>,
-						     sizeof...(Args1) == sizeof...(Args2)
-						    >
-    { };
-    */
-    
+			    
 } // namespace signature_dtl  
 } // namespace invoker_dtl   
 } // namesapce metafun
