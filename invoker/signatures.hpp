@@ -44,11 +44,18 @@ namespace signature_dtl {
 	enum
 	{
 	    value = 
+	    
+	    invoker_dtl::signature_dtl::first_signature_converts_to_second<Signature, H>::eval() +
+	    number_of_signature_matches<Signature, T...>::value
+
+/*
+	    value = 
 	    metafun::eval
 	    <
 	       invoker_dtl::signature_dtl::first_signature_converts_to_second<Signature, H>
 	    >() +
 	    number_of_signature_matches<Signature, T...>::value
+*/
 	};
     };
     
@@ -101,34 +108,40 @@ namespace signature_dtl {
 
 	static_assert( std::is_same<Signature, signature<> >::value,
 		       "The proposed function call lacks a valid signature.");
-	using result = Signature;
+	using type = Signature;
     };
         
     template<typename Signature, typename Candidate>
     struct pick_candidate<Signature, Candidate>
     {
 	static_assert( eval
-		       < invoker_dtl::signature_dtl::
-		         first_signature_converts_to_second<Signature, Candidate>()
+		       <
+		         invoker_dtl::signature_dtl::
+		         first_signature_converts_to_second<Signature, Candidate>
 		       >(), "The proposed function call lacks a valid signature.");
-	using result = Candidate;
+	using type = Candidate;
     };
-    
+
     template<typename Signature, typename H, typename... T>
     struct pick_candidate<Signature, H, T...>
     {
-	template<typename... Args>
-	using alias_to_pick_candidate = pick_candidate<Signature, H, T...>;
+//	template<typename... Args>
+//	using alias_to_pick_candidate = pick_candidate<Args...>;
 	
-	using result =
+	using type =
 	    typename std::conditional
 	    <
 	      invoker_dtl::signature_dtl::
 	      first_signature_converts_to_second<Signature, H>::eval(),
 
+	    /*
 	      hull<H>,
 
 	      lazy<alias_to_pick_candidate, Signature, T...>
+	    */
+	    hull<H>,
+
+	    pick_candidate<Signature, T...>
 	    >::type::type;
     };
     
@@ -143,23 +156,17 @@ namespace metafun
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
 
+	template<typename F>
+	static constexpr auto invoke(F&&, ...) { }
+	
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)
 	{
-	    using sig = typename signature_dtl::pick_candidate< list<Args&&...>,
-								Signatures...>::result;
+	    using sig = typename signature_dtl::pick_candidate< signature<Args&&...>,   //used to be list!!!
+								Signatures...>::type;
+//	    return sig();
 	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 	}
-
-	template<typename F, typename... Args>
-	static constexpr auto invoke_dirty_test(F&& f, Args&&... args)
-	{
-	    using sig = typename list<Signatures...>::head;
-	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-	}
-
-
-	
     };
 }
 

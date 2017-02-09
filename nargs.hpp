@@ -15,13 +15,12 @@ namespace nargs   {
 	wrapper(wrapper const& other)         : elem_(other.elem_) { }
 	wrapper(wrapper && other)             : elem_(std::move(other.elem_)) { } 
 
-	/*
-	operator Element&&()             { return static_cast<Element&&>(elem_); }
-	operator Element&()              { return static_cast<Element&> (elem_); }
+	
+	operator Element&&()              { return static_cast<Element&&>(elem_); }
+//	operator Element&()               { return static_cast<Element&> (elem_); }
 	operator Element const&()  const { return static_cast<Element const&>(elem_); }
-	operator Element const&&() const { return static_cast<Element const&&>(elem_); }
-	*/
-
+//	operator Element const&&() const { return static_cast<Element const&&>(elem_); }
+	
 	template<typename S>
 	S explicit_cast_to() const { return static_cast<S>(elem_); }
 	

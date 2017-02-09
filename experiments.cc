@@ -42,10 +42,10 @@ int main()
     NARG_PAIR(height, int);
     NARG_PAIR(width,  int);
     NARG_PAIR(depth,  int);
-    NARG_PAIR(cost,   double);
+    NARG_PAIR(cost,   double*);
     NARG_PAIR(volume, int);
 
-    auto something_to_do = [](int height_, double cost_, int width_, int depth_ = 1)
+    auto something_to_do = [](int height_, double* cost_, int width_ = 2, int depth_ = 1)
 	-> volume
     {
 	volume v { height_ * width_ * depth_ };
@@ -54,32 +54,29 @@ int main()
 	<< "height = " << height_ << std::endl
 	<< "width  = " << width_  << std::endl	
 	<< "depth  = " << depth_  << std::endl
-	<< std::endl;
-//	<< "volume = " << static_cast<int const&>(v) << std::endl;
+	<< std::endl
+	<< "volume = " << static_cast<int const&>(v) << std::endl;
 
 	return v;
     };
 
-    
-//    bind_nargs(something_to_do)(height(2), cost(3), width(4));
-
-
-//    narg_caller(something_to_do);
-
     auto g = narg_signature<height, cost, width>::callable(something_to_do);
-    g(height(3), cost(2.5), width(2));
-
-    signature<height, cost, width>::invoke(g, height(3), width(2), cost(2.5));
-/*
+    g(height(3), cost(nullptr), width(2));
+    
+    using metafun::invoker_dtl::signature_dtl::first_signature_converts_to_second;
+    
+    first_signature_converts_to_second< signature<height, cost, width>,
+					 signature<height&&, cost, width> >::eval();
+    
+    
     metafun::signatures
     <
-//	signature<height, cost, depth, width>,
-	signature<height, cost, width>
-	
-    >::invoke(
-	    g,
-	     height(3), cost(2.5), width(2)); 
-*/  
-
+	signature<width>, 
+	signature<height, cost>,
+	signature<height, cost, depth>,
+	signature<height, cost, width>,
+	signature<height, cost, depth, width>
+    >::invoke(g, height(3), width(2), cost(nullptr)); 
+    
 }
     
