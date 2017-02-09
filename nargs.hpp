@@ -26,7 +26,7 @@ namespace nargs   {
 	Element elem_;
     } ;
 
-#define NARG_PAIR( x, ... ) class x##tag;  using x = ::bld::wrapper<x##tag, __VA_ARGS__>
+#define NARG_PAIR( x, ... ) class x##tag;  using x = ::metafun::nargs::wrapper<x##tag, __VA_ARGS__>
     
 } // namespace nargs
 } // namespace metafun
