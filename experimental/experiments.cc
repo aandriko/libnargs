@@ -1,11 +1,11 @@
-#include "syntax.hpp"
-#include "types.hpp"
-#include "list.hpp"
-#include "set.hpp"
-#include "invoker/encapsulator.hpp"
-#include "invoker/signature_comparison.hpp"
-#include "invoker/signatures.hpp"
-#include "nargs.hpp"
+#include "kraanerg/syntax.hpp"
+#include "kraanerg/types.hpp"
+#include "kraanerg/list.hpp"
+#include "kraanerg/set.hpp"
+#include "nargs/encapsulator.hpp"
+#include "nargs/signature_comparison.hpp"
+#include "nargs/signatures.hpp"
+#include "nargs/nargs.hpp"
 
 #include <iostream>
 
@@ -13,8 +13,8 @@ void foo(int&& x) { }
 
 int main()
 {
-    using namespace metafun;
-    using namespace metafun::nargs;
+    using namespace act::kraanerg;
+    using namespace act::nargs;
     
     struct s1 { };
     struct s2 : public s1
@@ -28,7 +28,7 @@ int main()
     };
     
     int s42 = 42;
-    metafun::signatures
+    signatures
     <
 	signature<int & , s1>,
 	signature<int, double*, double**>
@@ -63,13 +63,13 @@ int main()
     auto g = narg_signature<height, cost, width>::callable(something_to_do);
     g(height(3), cost(nullptr), width(2));
     
-    using metafun::invoker_dtl::signature_dtl::first_signature_converts_to_second;
+    using act::nargs::invoker_dtl::signature_dtl::first_signature_converts_to_second;
     
     first_signature_converts_to_second< signature<height, cost, width>,
 					 signature<height&&, cost, width> >::eval();
     
     
-    metafun::signatures
+    act::nargs::signatures
     <
 	signature<width>, 
 	signature<height, cost>,
