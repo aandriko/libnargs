@@ -150,6 +150,15 @@ namespace metafun
 								Signatures...>::result;
 	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 	}
+
+	template<typename F, typename... Args>
+	static constexpr auto invoke_dirty_test(F&& f, Args&&... args)
+	{
+	    using sig = typename list<Signatures...>::head;
+	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+	}
+
+
 	
     };
 }
