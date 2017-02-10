@@ -1,9 +1,11 @@
-#ifndef ATC_MPL_SYNTAX_INC
-#define ATC_MPL_SYNTAX_INC
+#ifndef ACT_KRAANERG_SYNTAX_INC
+#define ACT_KRAANERG_SYNTAX_INC
 
 #include <type_traits>
 
-namespace metafun {
+namespace act      {
+
+namespace kraanerg {
 
     template<typename... Terms>
     struct terms
@@ -56,8 +58,8 @@ namespace metafun {
 	{
 	    template<typename Other>
 	    using with = typename std::conditional<
-		std::is_same<T, metafun::function<F> >::value,
-	        metafun::function<F>,
+		std::is_same<T, kraanerg::function<F> >::value,
+	        kraanerg::function<F>,
 		Other
 		>::type;	
 	};
@@ -95,6 +97,8 @@ namespace metafun {
 	enum { value = sizeof...(Terms) };
     };
         
-} // namespace metafun
+} // namespace kraanerg
 
-#endif //  ATC_MPL_SYNTAX_INC
+} // namespace act
+
+#endif //  ACT_KRAANERG_SYNTAX_INC

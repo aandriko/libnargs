@@ -1,24 +1,26 @@
-#ifndef METAFUN_SET_HPP_INC
-#define METAFUN_SET_HPP_INC
+#ifndef ACT_KRAANERG_SET_HPP_INC
+#define ACT_KRAANERG_SET_HPP_INC
 
 #include "list.hpp"
 #include "types.hpp"
 #include <type_traits>
 
-namespace metafun   { 
+namespace act       {
+
+namespace kraanerg  { 
 namespace logic_dtl { 
 	
     template<typename T, bool b> struct and_;
     template<typename T, bool b> struct or_;
     
     template<typename T> 
-    struct and_<T, true> { static constexpr bool eval() { return metafun::eval<T>(); }  };
+    struct and_<T, true> { static constexpr bool eval() { return kraanerg::eval<T>(); }  };
     
     template<typename T>
     struct and_<T, false> { static constexpr bool eval() { return false; } };
     
     template<typename T> 
-    struct or_<T, false> { static constexpr bool eval() { return metafun::eval<T>(); } };
+    struct or_<T, false> { static constexpr bool eval() { return kraanerg::eval<T>(); } };
     
     template<typename T>
     struct or_<T, true> { static constexpr bool eval() { return true; } };
@@ -26,25 +28,25 @@ namespace logic_dtl {
 }
 }
 
-namespace metafun {
+namespace kraanerg {
 namespace logic   {
     
     template<typename S, typename T>
-    using and_ = bool_<logic_dtl::and_<S, static_cast<bool>(metafun::eval<T>()) >::eval() >;
+    using and_ = bool_<logic_dtl::and_<S, static_cast<bool>(kraanerg::eval<T>()) >::eval() >;
 
     template<typename S, typename T>
-    using or_ = bool_<logic_dtl::or_<S, static_cast<bool>(metafun::eval<T>()) >::eval() >;
+    using or_ = bool_<logic_dtl::or_<S, static_cast<bool>(kraanerg::eval<T>()) >::eval() >;
     
     template<typename... Args>
-    using all = typename metafun::fold<and_, true_>::template right<Args...>;
+    using all = typename kraanerg::fold<and_, true_>::template right<Args...>;
 
     template<typename... Args>
-    using exists = typename metafun::fold<or_, false_>::template right<Args...> ;
+    using exists = typename kraanerg::fold<or_, false_>::template right<Args...> ;
 
 }
 }
 
-namespace metafun {
+namespace kraanerg {
     
     template<typename... Args>
     struct set : hull<Args>...
@@ -77,7 +79,7 @@ namespace metafun {
 			  set<Args0...>::template contains<Args1>()
 		      >...
 		      >::template push_front<
-			  metafun::function<metafun::logic::all >
+			  kraanerg::function<kraanerg::logic::all >
 		      >::template apply<bound::lazy>,
 
 		  hull<false_>
@@ -92,8 +94,8 @@ namespace metafun {
 	return cond< decltype( s1 == s2 ), false_, true_ >(); 
     }
   
-}
+} // namespace kraanerg
 
+} // namespace act
 
-
-#endif // METAFUN_SET_HPP_INC
+#endif // ACT_KRAANERG_SET_HPP_INC

@@ -1,7 +1,8 @@
-#ifndef METAFUN_NARGS_INC
-#define METAFUN_NARGS_INC
+#ifndef ACT_NARGS_NARGS_INC
+#define ACT_NARGS_NARGS_INC
 
-namespace metafun {
+namespace act     {
+
 namespace nargs   {
     
     template<typename Key, typename Element>
@@ -30,13 +31,11 @@ namespace nargs   {
 	mutable Element elem_; // very dirty, needs fixing!
     } ;
 
-#define NARG_PAIR( x, ... ) class x##tag;  using x = ::metafun::nargs::wrapper<x##tag, __VA_ARGS__>
+#define NARG_PAIR( x, ... ) class x##tag;  using x = ::act::nargs::wrapper<x##tag, __VA_ARGS__>
     
 } // namespace nargs
-} // namespace metafun
 
-
-namespace metafun   {
+namespace nargs     {
 namespace nargs_dtl {
 
     template<typename T>
@@ -46,34 +45,32 @@ namespace nargs_dtl {
     };
     
     template<typename Key, typename Elem>
-    struct naked<metafun::nargs::wrapper<Key, Elem>& >
+    struct naked<nargs::wrapper<Key, Elem>& >
     {
 	using type = Elem&;
     };
     
     template<typename Key, typename Elem>
-    struct naked<metafun::nargs::wrapper<Key, Elem> const& >
+    struct naked<nargs::wrapper<Key, Elem> const& >
     {
 	using type = Elem const&;
     };
     
     template<typename Key, typename Elem>
-    struct naked<metafun::nargs::wrapper<Key, Elem> && >
+    struct naked<nargs::wrapper<Key, Elem> && >
     {
 	using type = Elem &&;
     };
     
     template<typename Key, typename Elem>
-    struct naked<metafun::nargs::wrapper<Key, Elem> const && >
+    struct naked<nargs::wrapper<Key, Elem> const && >
     {
 	using type = Elem const &&;
     };
 
 } // namespace nargs_dtl
-} // namespace metafun
+} // namespace nargs
 
-
-namespace metafun {
 namespace nargs {
 
     template<typename F, typename... Nargs>
@@ -104,7 +101,8 @@ namespace nargs {
 	}
     };
 
-}
-}
+} // namespace nargs
+
+} // namespace act
     
-#endif // #define METAFUN_NARGS_INC
+#endif // #define ACT_NARGS_NARGS_INC

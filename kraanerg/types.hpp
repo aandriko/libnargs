@@ -1,10 +1,12 @@
-#ifndef ATC_MPL_TYPES_INC
-#define ATC_MPL_TYPES_INC
+#ifndef ACT_KRAANERG_TYPES_INC
+#define ACT_KRAANERG_TYPES_INC
 
 #include <type_traits>
 #include "syntax.hpp"
 
-namespace metafun   {
+namespace act       {
+
+namespace kraanerg  {
 namespace types_dtl {
         
     template<typename T, typename =
@@ -56,9 +58,9 @@ namespace types_dtl {
     };
                
 } // namespace types_dtl
-} // namespace metafun
+} // namespace kraanerg
 
-namespace metafun
+namespace kraanerg
 {
     // evaluates to a value x, 
     // if either a static function T::eval() exists (Then x = T::eval()),
@@ -87,7 +89,7 @@ namespace metafun
     namespace unbound
     {
 	template<template<typename...> class F, typename... Args>
-	using lazy = typename metafun::types_dtl::lazy_<function<F>, Args...>::desired_type;
+	using lazy = typename kraanerg::types_dtl::lazy_<function<F>, Args...>::desired_type;
     }
 */
 
@@ -134,6 +136,8 @@ namespace metafun
     using true_  = bool_<true>;
     using false_ = bool_<false>;	
     
-} // namespace metafun
+} // namespace kraanerg
 
-#endif // ATC_MPL_TYPES_INC
+} // namespact act
+    
+#endif // KRAANERG_TYPES_INC

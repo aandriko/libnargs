@@ -1,15 +1,18 @@
-#ifndef METAFUN_INVOKER_SIGNATURES_INC
-#define METAFUN_INVOKER_SIGNATURES_INC
+#ifndef ACT_NARGS_SIGNATURES_INC
+#define ACT_NARGS_SIGNATURES_INC
+
+#include "kraanerg/functional.hpp"
+#include "kraanerg/list.hpp"
+#include "kraanerg/types.hpp"
 
 #include "encapsulator.hpp"
-#include "../functional.hpp"
-#include "../list.hpp"
 #include "signature_comparison.hpp"
-#include "../types.hpp"
-#include "../nargs.hpp"
+#include "nargs.hpp"
 
-namespace metafun
-{
+namespace act   {
+
+namespace nargs {
+
     template<typename... Args>
     struct signature
     {
@@ -25,7 +28,7 @@ namespace metafun
     };
 }
 
-namespace metafun       {
+namespace nargs         {
 namespace signature_dtl {
 
     template<typename Signature, typename... SignatureList>
@@ -50,7 +53,7 @@ namespace signature_dtl {
 
 /*
 	    value = 
-	    metafun::eval
+	    kraanerg::eval
 	    <
 	       invoker_dtl::signature_dtl::first_signature_converts_to_second<Signature, H>
 	    >() +
@@ -61,35 +64,35 @@ namespace signature_dtl {
     
     template<typename... Signatures>
     using self_correlation_ =
-	typename type<int>::
+	typename kraanerg::type<int>::
 	sequence< number_of_signature_matches<Signatures, Signatures...>::value... >::
-	template apply<metafun::list>;
+	template apply<kraanerg::list>;
 
     
     template<typename... Signatures>
     using self_correlation
     = typename std::conditional<sizeof...(Signatures) != 0,
-				metafun::lazy<self_correlation_, Signatures...>,
-				metafun::lazy<list> 
+				kraanerg::lazy<self_correlation_, Signatures...>,
+				kraanerg::lazy<kraanerg::list> 
 				>::type::type;
     
     
     template<typename Int1, typename Int2>
-    using add = typename metafun::type<int>::instance
+    using add = typename kraanerg::type<int>::instance
     <
-	metafun::eval<Int1>() + metafun::eval<Int2>()
+	kraanerg::eval<Int1>() + kraanerg::eval<Int2>()
     >;
 
     template<typename... Signatures>
     constexpr bool signatures_consistent()
     {
 	return 
-	eval
+	kraanerg::eval
         <
 	    typename self_correlation<Signatures...>::template
 	    apply
 	    <
-		metafun::fold<add, type<int>::instance<0> >::template left
+		kraanerg::fold<add, kraanerg::type<int>::instance<0> >::template left
 	    >
 	>() == sizeof...(Signatures);
     }
@@ -114,7 +117,7 @@ namespace signature_dtl {
     template<typename Signature, typename Candidate>
     struct pick_candidate<Signature, Candidate>
     {
-	static_assert( eval
+	static_assert( kraanerg::eval
 		       <
 		         invoker_dtl::signature_dtl::
 		         first_signature_converts_to_second<Signature, Candidate>
@@ -139,17 +142,17 @@ namespace signature_dtl {
 
 	      lazy<alias_to_pick_candidate, Signature, T...>
 	    */
-	    hull<H>,
+	    kraanerg::hull<H>,
 
 	    pick_candidate<Signature, T...>
 	    >::type::type;
     };
     
 } // namespace signature_dtl
-} // namespace metafun
+} // namespace nargs
 
-namespace metafun
-{
+namespace nargs {
+    
     template<typename... Signatures>
     struct signatures
     {
@@ -168,6 +171,9 @@ namespace metafun
 	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 	}
     };
-}
 
-#endif // METAFUN_INVOKER_SIGNATURES_INC
+} // namespace nargs
+
+} // namespace act
+    
+#endif // ACT_NARGS_SIGNATURES_INC

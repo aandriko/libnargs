@@ -1,10 +1,12 @@
-#ifndef ATC_MPL_LIST_INC
-#define ATC_MPL_LIST_INC
+#ifndef ACT_KRAANERG_LIST_INC
+#define ACT_KRAANERG_LIST_INC
 
 #include "syntax.hpp"
 #include "functional.hpp"
 
-namespace metafun  {
+namespace act       {
+
+namespace kraanerg  {
 
     template<typename... > struct list;
     
@@ -48,9 +50,9 @@ namespace metafun  {
     };
 
 } // namespace list_dtl
-} // namespace metafun
+} // namespace kraanerg
 
-namespace metafun {
+namespace kraanerg {
 
     template<typename... Collections>
     using concatenate = typename list_dtl::concatenate_<Collections...>::type;
@@ -105,7 +107,7 @@ namespace metafun {
 	using tail = list<Tail...>;
 	
 	template<int n>
-	using at = typename pow<metafun::tail, n>::template function<list<head, Tail...> >::head;
+	using at = typename pow<kraanerg::tail, n>::template function<list<head, Tail...> >::head;
 
 	template<typename X>
 	using push_front = list<X, Head, Tail...> ;
@@ -139,6 +141,8 @@ namespace metafun {
     }
 
     
-} // namespace metafun
+} // namespace kraanerg
 
-#endif // ATC_MPL_LIST_INC
+} // namespace act
+
+#endif // ACT_KRAANERG_LIST_INC

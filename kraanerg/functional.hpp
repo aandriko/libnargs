@@ -1,7 +1,9 @@
-#ifndef METAFUN_FUNCTIONAL_INCLUDED
-#define METAFUN_FUNCTIONAL_INCLUDED
+#ifndef ACT_KRAANERG_FUNCTIONAL_INCLUDED
+#define ACT_KRAANERG_FUNCTIONAL_INCLUDED
 
-namespace metafun  {
+namespace act      {
+
+namespace kraanerg {
 namespace fold_dtl {
 
     template<
@@ -39,9 +41,9 @@ namespace fold_dtl {
     };
     
 } // namespace fold_dtl
-} // namespace metafun
+} // namespace kraanerg
 
-namespace metafun
+namespace kraanerg
 {
 
     template<template<typename> class F, int n>
@@ -71,12 +73,14 @@ namespace metafun
     namespace bound
     {
 	template<typename bound_F, typename Z>
-	using fold = metafun::pow<bound_F::template apply_subterms, static_cast<int>(eval<Z>())>;
+	using fold = kraanerg::pow<bound_F::template apply_subterms, static_cast<int>(eval<Z>())>;
 
 	template<typename Bound_F, typename Int>
-	using pow = metafun::pow<Bound_F::template apply_subterms, static_cast<int>(eval<Int>()) >;
+	using pow = kraanerg::pow<Bound_F::template apply_subterms, static_cast<int>(eval<Int>()) >;
     }
 
-} //namespace metafun
+} //namespace kraanerg
 
-#endif // METAFUN_FUNCTIONAL_INCLUDED
+} // namespace act
+
+#endif // ACT_KRAANERG_FUNCTIONAL_INCLUDED

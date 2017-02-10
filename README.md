@@ -1,29 +1,16 @@
 # README #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+(0) nargs    ... small library for Python-like named arguments in functions
+(1) kraanerg ... nucleus for TMP library
+(2) act      ... (A)ndriko's (C)ollection of (T)ools/(T)oys
 
-### What is this repository for? ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+(0) nargs
 
-### How do I get set up? ###
+Nargs provides a non-intrusive generative framework to incept the Python-feature
+of named arguments for functions.
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+Example:
 
-### Contribution guidelines ###
+can be found in folder experimental/ (just type make)
 
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact

@@ -1,11 +1,13 @@
-#ifndef METAFUN_SIGNATURE_COMPARISON_INC
-#define METAFUN_SIGNATURE_COMPARISON_INC
+#ifndef ACT_NARGS_SIGNATURE_COMPARISON_INC
+#define ACT_NARGS_SIGNATURE_COMPARISON_INC
 
-#include "../list.hpp"
-#include "../set.hpp"
+#include "kraanerg/list.hpp"
+#include "kraanerg/set.hpp"
 #include <type_traits>
 
-namespace metafun       {
+namespace act           {
+
+namespace nargs         {
 namespace invoker_dtl   {
 namespace signature_dtl { 
 
@@ -13,13 +15,13 @@ namespace signature_dtl {
     struct count_fits;
 
     template<typename X>
-    struct count_fits<X, metafun::list<> >
+    struct count_fits<X, kraanerg::list<> >
     {
 	enum { value = 0 };
     };
 
     template<typename X, typename H, typename... T>
-    struct count_fits<X, metafun::list<H, T...> >
+    struct count_fits<X, kraanerg::list<H, T...> >
     {
 	using decay_X = typename std::decay<X>::type;
 	enum { value =
@@ -44,12 +46,12 @@ namespace signature_dtl {
 
 	       
 	       +
-	       count_fits<X, metafun::list<T...> >::value };
+	       count_fits<X, kraanerg::list<T...> >::value };
     };
 
     template<typename Number, typename Count>
     using accumulate =
-	typename metafun::type<int>::instance< metafun::eval<Number>() + metafun::eval<Count>() >;
+	typename kraanerg::type<int>::instance< kraanerg::eval<Number>() + kraanerg::eval<Count>() >;
 
     template<typename List1, typename List2, bool list_sizes_equal>
     struct first_signature_converts_to_second_;
@@ -69,7 +71,7 @@ namespace signature_dtl {
 
     template<typename T>
     using no_more_often_than_once =
-	metafun::bool_< (eval<T>() <= 1) >;
+	kraanerg::bool_< (kraanerg::eval<T>() <= 1) >;
 
     template<template<typename...> class List1, ///urspruenglich nur ein parameter List
 	     template<typename...> class List2,
@@ -81,15 +83,15 @@ namespace signature_dtl {
 	static constexpr bool eval()
 	{
 	    using intermediate_result =
-		list
+		kraanerg::list
 		<
-		    count_fits<Args1, metafun::list<Args2...> >...
+		    count_fits<Args1, kraanerg::list<Args2...> >...
 	        >;
 	    
 	   using total_count = 
 		typename intermediate_result::template apply
 		<
-		    metafun::fold<accumulate, type<int>::template instance<0> >::
+		    kraanerg::fold<accumulate, kraanerg::type<int>::template instance<0> >::
 		    template right
 	       >;
 
@@ -101,12 +103,12 @@ namespace signature_dtl {
 		   no_more_often_than_once
 	       > ::
 	       
-	       template apply<metafun::logic::all>;
+	       template apply<kraanerg::logic::all>;
 
 	   return
-	       (metafun::eval<total_count>() == sizeof...(Args2))
+	       (kraanerg::eval<total_count>() == sizeof...(Args2))
 	       &&
-	       metafun::eval<no_more_than_once_test>();
+	       kraanerg::eval<no_more_than_once_test>();
 
 	}
     };
@@ -119,12 +121,14 @@ namespace signature_dtl {
 
 	List2,
 
-	int(metafun::term<List1>::subterms::count) ==
-	int(metafun::term<List2>::subterms::count)
+	int(kraanerg::term<List1>::subterms::count) ==
+	int(kraanerg::term<List2>::subterms::count)
        >;
 			    
 } // namespace signature_dtl  
 } // namespace invoker_dtl   
-} // namesapce metafun
+} // namesapce nargs
 
-#endif //  METAFUN_SIGNATURE_COMPARISON_INC
+} // namespace act
+    
+#endif //  ACT_NARGS_SIGNATURE_COMPARISON_INC

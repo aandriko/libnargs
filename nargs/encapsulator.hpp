@@ -1,5 +1,5 @@
-#ifndef METAFUN_INVOKER_ENCAPSULATOR_INC
-#define METAFUN_INVOKER_ENCAPSULATOR_INC
+#ifndef ACT_NARGS_ENCAPSULATOR_INC
+#define ACT_NARGS_ENCAPSULATOR_INC
 
 #include <functional>
 #include <type_traits>
@@ -7,7 +7,9 @@
 #include <utility>
 #include "signature_comparison.hpp"
 
-namespace metafun     {
+namespace act         {
+
+namespace nargs       {
 namespace invoker_dtl {
     
     template<typename> struct capsule;
@@ -26,7 +28,7 @@ namespace invoker_dtl {
 		 std::enable_if<std::is_convertible<T&, S&>::value>::type>
 	operator S&& ()
 	{
-	    return static_cast<S&&>(ref_); // leave()? 
+	    return static_cast<S&&>(ref_); 
 	}
     };
     
@@ -127,8 +129,8 @@ namespace invoker_dtl {
 		 <
 		     signature_dtl::first_signature_converts_to_second
 		      <
-			 metafun::list<permuted...>,
-			 metafun::list<RvalRefArgs...>
+			 kraanerg::list<permuted...>,
+			 kraanerg::list<RvalRefArgs...>
 		      >::eval()
 		 >::type >
         auto permute_and_invoke_(F&& f, std::nullptr_t)
@@ -177,6 +179,8 @@ namespace invoker_dtl {
     };
        
 } // namesapce invoker_dtl
-} // namespace metafun
+} // namespace nargs
+
+} // namespace act
     
-#endif // METAFUN_INVOKER_ENCAPSULATOR_INC
+#endif // ACT_NARGS_ENCAPSULATOR_INC
