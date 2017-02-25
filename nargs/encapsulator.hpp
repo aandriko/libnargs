@@ -40,10 +40,11 @@ namespace invoker_dtl {
     constexpr bool encapsulates_arithmetic_type()
     {
 	return 
-	    std::is_same<remove_reference_wrapper_and_decay<T> const&, T>::value
-	    ||
-	    ( std::is_rvalue_reference<T>::value &&
-	      std::is_arithmetic<typename std::remove_reference<T>::type>::value );
+	    (std::is_same<remove_reference_wrapper_and_decay<T> const&, T>::value
+	     ||
+	     std::is_rvalue_reference<T>::value)
+	    &&
+	    std::is_arithmetic<typename std::remove_reference<T>::type>::value ;
     }
 	
     template<typename Reference>
@@ -56,7 +57,8 @@ namespace invoker_dtl {
 				     Reference>::type;
 						      
     public:
-	static_assert(std::is_reference<Reference>::value, "");
+	static_assert(std::is_reference<Reference>::value ||
+		      encapsulates_arithmetic_type<Reference>() , "");
 	
 	using reference = Reference;
 	

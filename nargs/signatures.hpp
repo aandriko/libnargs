@@ -28,7 +28,6 @@ namespace signature_dtl {
 } // namespace signature_dtl
 } // namespace nargs
 
-
 namespace nargs {
     
     template<typename... Args>
@@ -37,14 +36,30 @@ namespace nargs {
 	template<typename F, typename... PermArgs>
 	static constexpr auto invoke(F && f, PermArgs && ... perm_args)
 	{
-	    using signature_dtl::wrap_ref_if_necessary;
-	    
 	    return invoker_dtl::invoker<Args...>()
 		(
-		    wrap_ref_if_necessary(std::forward<F>(f)),
-		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...
+		    std::move(f), std::move(perm_args)...
+//		    wrap_ref_if_necessary(std::forward<F>(f)),
+//		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...
 		);
-	}	
+	}
+
+	using strict = signature<Args...>;
+	
+	struct lax
+	{
+	    using strict = signature<Args...>;
+	    
+	    template<typename F, typename... PermArgs>
+	    static constexpr auto invoke(F&& f, PermArgs&&... perm_args)
+	    {
+		using signature_dtl::wrap_ref_if_necessary;
+		
+		return signature<Args...>::invoke(
+		    wrap_ref_if_necessary(std::forward<F>(f)),
+		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...); 
+	    }
+	};
     };
 }
 
@@ -171,8 +186,7 @@ namespace nargs {
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
 
-//	template<typename F>
-//	static constexpr auto invoke(F&&, ...) { }
+	using strict = signatures<Signatures...>;
 	
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)
@@ -180,8 +194,22 @@ namespace nargs {
 	    using sig = typename signature_dtl::pick_candidate< signature<Args&&...>, 
 								Signatures...>::type;
 
-	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+	    return sig::invoke(std::move(f), std::move(args)...);
 	}
+
+	struct lax
+	{
+	    using strict = signatures<Signatures...>;
+	    
+	    template<typename F, typename... Args>
+	    static constexpr auto invoke(F&& f, Args&&... args)
+	    {
+		using sig = typename signature_dtl::pick_candidate< signature<Args&&...>, 
+								    Signatures...>::type;
+		
+		return sig::lax::invoke(std::forward<F>(f), std::forward<Args>(args)...);
+	    }
+	};
     };
 
 } // namespace nargs
