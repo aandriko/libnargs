@@ -28,7 +28,7 @@ namespace signature_dtl {
 	       bool(
 		   
 		   std::is_convertible<X, H>::value
-
+/*
 		   &&
 
 		   !
@@ -41,7 +41,7 @@ namespace signature_dtl {
 		       ||
 		       std::is_same< decay_X *, X>::value )
 		       )		  
-
+*/
 		   )
 
 	       

@@ -1,6 +1,9 @@
 #ifndef ACT_KRAANERG_FUNCTIONAL_INCLUDED
 #define ACT_KRAANERG_FUNCTIONAL_INCLUDED
 
+#include "syntax.hpp"
+#include "types.hpp"
+
 namespace act      {
 
 namespace kraanerg {

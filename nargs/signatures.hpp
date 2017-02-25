@@ -14,18 +14,21 @@ namespace act   {
 namespace nargs {
 
     template<typename... Args>
-    struct signature
+    struct signature_
     {
 	template<typename F, typename... PermArgs>
-	static constexpr auto invoke(F&& f, PermArgs&&... perm_args)
+	static constexpr auto invoke(F && f, PermArgs && ... perm_args)
 	{
-	    return invoker_dtl::invoker<invoker_dtl::rval_referenced<Args>...>()
+	    return invoker_dtl::invoker<invoker_dtl::wrapped_reference<Args>...>()
 		(
 		    std::forward<F>(f),
-		    std::forward<PermArgs>(perm_args)...
+		    static_cast<invoker_dtl::wrapped_reference<PermArgs && > && >(perm_args)...
 		);
 	}
     };
+
+    template<typename... Args>
+    using signature = signature_< invoker_dtl::wrapped_reference<Args>... >;
 }
 
 namespace nargs         {
@@ -128,23 +131,15 @@ namespace signature_dtl {
     template<typename Signature, typename H, typename... T>
     struct pick_candidate<Signature, H, T...>
     {
-//	template<typename... Args>
-//	using alias_to_pick_candidate = pick_candidate<Args...>;
-	
 	using type =
 	    typename std::conditional
 	    <
 	      invoker_dtl::signature_dtl::
 	      first_signature_converts_to_second<Signature, H>::eval(),
 
-	    /*
-	      hull<H>,
+	      kraanerg::hull<H>,
 
-	      lazy<alias_to_pick_candidate, Signature, T...>
-	    */
-	    kraanerg::hull<H>,
-
-	    pick_candidate<Signature, T...>
+	      pick_candidate<Signature, T...>
 	    >::type::type;
     };
     
@@ -165,9 +160,9 @@ namespace nargs {
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)
 	{
-	    using sig = typename signature_dtl::pick_candidate< signature<Args&&...>,   //used to be list!!!
+	    using sig = typename signature_dtl::pick_candidate< signature<Args&&...>, 
 								Signatures...>::type;
-//	    return sig();
+
 	    return sig::invoke(std::forward<F>(f), std::forward<Args>(args)...);
 	}
     };
