@@ -9,26 +9,43 @@
 #include "signature_comparison.hpp"
 #include "nargs.hpp"
 
-namespace act   {
+namespace act           {
+
+namespace nargs         {
+namespace signature_dtl {
+
+    template<typename T>
+    constexpr auto wrap_ref_if_necessary(T&& t)        
+    {
+	using result_type =
+	    typename std::conditional<std::is_lvalue_reference<T>::value,
+				      std::reference_wrapper<typename std::remove_reference<T>::type>,
+				      T&& >::type;
+
+	return static_cast<result_type>(t);
+    }
+
+} // namespace signature_dtl
+} // namespace nargs
+
 
 namespace nargs {
-
+    
     template<typename... Args>
-    struct signature_
+    struct signature
     {
 	template<typename F, typename... PermArgs>
 	static constexpr auto invoke(F && f, PermArgs && ... perm_args)
 	{
-	    return invoker_dtl::invoker<invoker_dtl::wrapped_reference<Args>...>()
+	    using signature_dtl::wrap_ref_if_necessary;
+	    
+	    return invoker_dtl::invoker<Args...>()
 		(
-		    std::forward<F>(f),
-		    static_cast<invoker_dtl::wrapped_reference<PermArgs && > && >(perm_args)...
+		    wrap_ref_if_necessary(std::forward<F>(f)),
+		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...
 		);
-	}
+	}	
     };
-
-    template<typename... Args>
-    using signature = signature_< invoker_dtl::wrapped_reference<Args>... >;
 }
 
 namespace nargs         {
@@ -154,8 +171,8 @@ namespace nargs {
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
 
-	template<typename F>
-	static constexpr auto invoke(F&&, ...) { }
+//	template<typename F>
+//	static constexpr auto invoke(F&&, ...) { }
 	
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)

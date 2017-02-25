@@ -17,8 +17,8 @@ namespace invoker_dtl {
     // (a) T = A&&
     // (b) T = std::reference_wrapper< const A& >
 
-    template<typename T>
-    using wrapped_reference = T;
+//    template<typename T>
+//    using wrapped_reference = T;
     
     template<typename T>
     struct remove_reference_wrapper_and_decay_
@@ -81,18 +81,6 @@ namespace invoker_dtl {
 	reference_or_arithmetic_value ref_;
     };
 
-
-    template<typename T>
-    constexpr auto wrap_ref_if_necessary(T&& t)        
-    {
-	using result_type =
-	    typename std::conditional<std::is_lvalue_reference<T>::value,
-				      std::reference_wrapper<typename std::remove_reference<T>::type>,
-				      T&& >::type;
-
-	return static_cast<result_type>(t);
-    }
-        
     template<typename... Args>
     struct encapsulator : public capsule<Args>...
     {
@@ -111,17 +99,9 @@ namespace invoker_dtl {
 	
 	template<typename F>
 	auto invoke(F&& f)
-	{
-	    
-//	    return std::forward<F>(f)(static_cast<capsule<Args> >(*this).content()...);
-	    return std::invoke( wrap_ref_if_necessary(std::forward<F>(f)),
-				wrap_ref_if_necessary( static_cast<capsule<Args> >(*this).content() )... );
-	}
-
-	template<typename F>
-	auto std_invoke(F&& f)
-	{
-	    return std::invoke( std::forward<F>(f), static_cast<capsule<Args> >(*this).content()...);
+	{	    
+	    return std::invoke( std::move(f),
+				static_cast<capsule<Args> >(*this).content()... );
 	}
     };
 

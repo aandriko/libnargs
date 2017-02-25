@@ -79,10 +79,10 @@ int main()
 	(
 	    [](int const&   x, s1&& sth ){ std::cout << &sth << " : " << x << std::endl; },	     
 	    std::move(a)
-	    , s42	    
+	    , 43.4
  	);
 
-    /*  
+      
     NARG_PAIR(height, int);
     NARG_PAIR(width,  int);
     NARG_PAIR(depth,  int);
@@ -121,6 +121,6 @@ int main()
 	signature<height, cost, width>,
 	signature<height, cost, depth, width>
     >::invoke(g, height(3), width(2), cost(nullptr)); 
-*/
+
 }
     
