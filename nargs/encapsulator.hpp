@@ -23,7 +23,7 @@ namespace invoker_dtl {
     template<typename T>
     struct remove_reference_wrapper_and_decay_
     {
-	struct type;
+	using type = typename std::decay<T>::type;
     };
 
     template<typename T>
@@ -39,12 +39,16 @@ namespace invoker_dtl {
     template<typename T>
     constexpr bool encapsulates_arithmetic_type()
     {
-	return 
-	    (std::is_same<remove_reference_wrapper_and_decay<T> const&, T>::value
-	     ||
-	     std::is_rvalue_reference<T>::value)
+	using X = remove_reference_wrapper_and_decay<T>;
+	
+	return
+	    std::is_arithmetic<X>::value
 	    &&
-	    std::is_arithmetic<typename std::remove_reference<T>::type>::value ;
+	    (
+		std::is_same<X const&, T>::value
+		||
+		std::is_same<X&&, T>::value
+	    );
     }
 	
     template<typename Reference>
