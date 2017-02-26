@@ -75,7 +75,7 @@ int main()
     <
 	signature<int const& , s1&&>,
 	signature<int, double*, double**>
-    >::invoke
+	>::strict::invoke
 	(
 	    [](int const&   x, s1&& sth ){ std::cout << &sth << " : " << x << std::endl; },	     
 	    std::move(a)
@@ -120,7 +120,21 @@ int main()
 	signature<height, cost, depth>,
 	signature<height, cost, width>,
 	signature<height, cost, depth, width>
-    >::invoke(g, height(3), width(2), cost(nullptr)); 
+	>::lax::invoke(g, height(3), width(2), cost(nullptr)); 
 
+    std::cout << "------------- encapsulates arithmetic type: "
+	      << std::boolalpha
+	      << std::endl;
+
+
+    using act::nargs::invoker_dtl::encapsulates_arithmetic_type;
+    
+    std::cout << false << " : " << encapsulates_arithmetic_type<int const>() << std::endl
+	      << true << " : " << encapsulates_arithmetic_type<int const&>() << std::endl
+	      << true << " : " << encapsulates_arithmetic_type<int&&     >() << std::endl
+	      << false << " : " << encapsulates_arithmetic_type<int       >() << std::endl
+	      << false << " : " << encapsulates_arithmetic_type<int*      >() << std::endl
+	      << false << " : " << encapsulates_arithmetic_type<void*     >() << std::endl
+	      << false << " : " << encapsulates_arithmetic_type<int [4]   >() << std::endl;
 }
     

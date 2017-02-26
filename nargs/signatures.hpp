@@ -14,52 +14,131 @@ namespace act           {
 namespace nargs         {
 namespace signature_dtl {
 
-    template<typename T>
-    constexpr auto wrap_ref_if_necessary(T&& t)        
+    enum class lvalue_reference_wrapping { yes, no };
+
+    template<lvalue_reference_wrapping>
+    struct reference_policy;
+
+    template<>
+    struct reference_policy<lvalue_reference_wrapping::yes>
     {
-	using result_type =
-	    typename std::conditional<std::is_lvalue_reference<T>::value,
-				      std::reference_wrapper<typename std::remove_reference<T>::type>,
-				      T&& >::type;
+	// Converts a left value reference of type Τ& to std::reference_wrapper<T&>
+	// and leaves a right value reference of type T&& unchanged
+	template<typename T>
+	static
+	constexpr auto wrap(T&& t)        
+	{
+	    using result_type =
+		typename std::conditional<std::is_lvalue_reference<T>::value,
+					  std::reference_wrapper<typename std::remove_reference<T>::type>,
+					  T&& >::type;
+	    
+	    return static_cast<result_type>(t);
+	}	
+    };
 
-	return static_cast<result_type>(t);
-    }
+    template<>
+    struct reference_policy<lvalue_reference_wrapping::no>
+    {
+	// lvalue references are not wrapped. If they occur, then std::invoke
+	// will trigger an error message. This is intended
 
+	template<typename T>
+	static
+	constexpr T&& wrap(T&& t)
+	{
+	    static_assert(std::is_rvalue_reference<T&&>::value,
+			  "Error: Lavlue references must be explicitly wrapped "\
+			  "with std::ref since currently the strict mode is "\
+			  "chosen for the given signature.\n");
+
+	    return std::forward<T&&>(t);
+	}
+    };
+    
 } // namespace signature_dtl
 } // namespace nargs
 
 namespace nargs {
-    
+
+    template<signature_dtl::lvalue_reference_wrapping, typename... Args>
+    struct signature_;
+
     template<typename... Args>
-    struct signature
+    struct signature : public signature_<signature_dtl::lvalue_reference_wrapping::no, Args...>
     {
-	template<typename F, typename... PermArgs>
-	static constexpr auto invoke(F && f, PermArgs && ... perm_args)
+	using strict = signature<Args...>;
+	using lax    = signature_<signature_dtl::lvalue_reference_wrapping::yes, Args...>;
+    };
+	
+    template<signature_dtl::lvalue_reference_wrapping policy, typename... Args>
+    struct signature_
+    {
+	using strict = signature_<signature_dtl::lvalue_reference_wrapping::no,
+				  Args...>;
+
+	using lax    = signature_<signature_dtl::lvalue_reference_wrapping::yes,
+				  Args...>;	
+
+	template<typename F, typename... PermutedArgs>
+	static constexpr auto invoke(F && f, PermutedArgs && ... perm_args)
 	{
-	    return invoker_dtl::invoker<Args...>()
-		(
-		    std::move(f), std::move(perm_args)...
-//		    wrap_ref_if_necessary(std::forward<F>(f)),
-//		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...
-		);
+	    return invoker_dtl::invoker<Args...>()	    	    
+	    (
+		signature_dtl::reference_policy<policy>::wrap(std::forward<F&&>(f)),
+		signature_dtl::reference_policy<policy>::wrap(std::forward<PermutedArgs&&>(perm_args))...
+	    ); 
 	}
 
-	using strict = signature<Args...>;
-	
-	struct lax
+	template<typename X>
+	struct build
 	{
-	    using strict = signature<Args...>;
-	    
-	    template<typename F, typename... PermArgs>
-	    static constexpr auto invoke(F&& f, PermArgs&&... perm_args)
+	    /*
+	    template<typename... PermutedArgs>
+	    static
+	    X with()(PermutedArgs && ... permuted_args)
 	    {
-		using signature_dtl::wrap_ref_if_necessary;
-		
-		return signature<Args...>::invoke(
-		    wrap_ref_if_necessary(std::forward<F>(f)),
-		    wrap_ref_if_necessary(std::forward<PermArgs>(perm_args))...); 
+		return invoke
+		    (
+			& invoker_dtl::build<X>::template with<Args...>,
+
+			std::forward<PermutedArgs&&>(permuted_args)...
+		    );				       
+	    }
+	    */
+	};
+
+	template<typename F>
+	class invoker
+	{
+	public:
+	    constexpr invoker(F&& f) : f_(f) {}
+
+	    template<typename... PermutedArgs>
+	    constexpr auto operator()(PermutedArgs&&... permuted_args) const
+	    {
+		return invoke(std::forward<F&&>(f_),
+			      std::forward<PermutedArgs&&>(permuted_args)... );
+	    }
+	    
+	private:
+	    F&& f_;
+	};
+	
+	template<typename X>
+	struct builder
+	{
+	    template<typename... PermutedArgs>
+	    constexpr X operator()(PermutedArgs&&... permuted_args) const
+	    {
+		return build<X>::template with<PermutedArgs...>
+		    (
+			signature_dtl::reference_policy<policy>::
+			template wrap<PermutedArgs&&>(permuted_args)...
+		    );
 	    }
 	};
+	
     };
 }
 
@@ -132,7 +211,6 @@ namespace signature_dtl {
 	>() == sizeof...(Signatures);
     }
 
-
     // For a signature 'Signature' find the unique signature X among the
     // signatures listed in Candidates..., which is the unique one determined
     // by the property that 'Signature' can be transformed to X, provided that
@@ -174,43 +252,52 @@ namespace signature_dtl {
 	      pick_candidate<Signature, T...>
 	    >::type::type;
     };
+
+    template<signature_dtl::lvalue_reference_wrapping, typename Signature>
+    struct set_ref_wrapping_policy;
+
+    template<typename Signature>
+    struct set_ref_wrapping_policy<signature_dtl::lvalue_reference_wrapping::yes, Signature>
+    {
+	using type = typename Signature::lax; 
+    };
+
+    template<typename Signature>
+    struct set_ref_wrapping_policy<signature_dtl::lvalue_reference_wrapping::no, Signature>
+    {
+	using type = typename Signature::strict; 
+    };
+
+    
     
 } // namespace signature_dtl
 } // namespace nargs
 
 namespace nargs {
-    
-    template<typename... Signatures>
-    struct signatures
+        
+    template<signature_dtl::lvalue_reference_wrapping policy, typename... Signatures>
+    struct signatures_
     {
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
 
-	using strict = signatures<Signatures...>;
+	using strict = signatures_<signature_dtl::lvalue_reference_wrapping::no, Signatures...>;
+	using lax    = signatures_<signature_dtl::lvalue_reference_wrapping::yes, Signatures...>;
 	
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)
 	{
-	    using sig = typename signature_dtl::pick_candidate< signature<Args&&...>, 
+	    using sig_ = typename signature_dtl::pick_candidate< signature<Args&&...>, 
 								Signatures...>::type;
-
-	    return sig::invoke(std::move(f), std::move(args)...);
-	}
-
-	struct lax
-	{
-	    using strict = signatures<Signatures...>;
+	    using sig = typename signature_dtl::set_ref_wrapping_policy<policy, sig_>::type;
 	    
-	    template<typename F, typename... Args>
-	    static constexpr auto invoke(F&& f, Args&&... args)
-	    {
-		using sig = typename signature_dtl::pick_candidate< signature<Args&&...>, 
-								    Signatures...>::type;
-		
-		return sig::lax::invoke(std::forward<F>(f), std::forward<Args>(args)...);
-	    }
-	};
+	    return sig::invoke(std::forward<F&&>(f), std::forward<Args&&>(args)...);
+	}
     };
+
+    template<typename... Signatures>
+    using signatures = signatures_<signature_dtl::lvalue_reference_wrapping::no,
+				   Signatures... >;
 
 } // namespace nargs
 

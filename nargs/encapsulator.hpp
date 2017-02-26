@@ -76,11 +76,10 @@ namespace invoker_dtl {
 		 >		 	
 	operator Capsule() const
 	{
-//	    std::cout << "conversion capsule<S&&>" << std::endl;
 	    return capsule<Ref>(static_cast<Ref>(ref_));
 	}
 
-	reference content() { return static_cast<reference>(ref_); }
+	reference content() { return std::forward<reference>(ref_); }
 
     private:
 
@@ -106,7 +105,7 @@ namespace invoker_dtl {
 	template<typename F>
 	auto invoke(F&& f)
 	{	    
-	    return std::invoke( std::move(f),
+	    return std::invoke( std::forward<F&&>(f),
 				static_cast<capsule<Args> >(*this).content()... );
 	}
     };
@@ -124,7 +123,7 @@ namespace invoker_dtl {
 		    std::forward<PermutedArgs>(permuted_args)...
 		)
 	    );
-	    return e.invoke(std::forward<F>(f));
+	    return e.invoke(std::forward<F&&>(f));
 	}
     };
 
@@ -132,8 +131,20 @@ namespace invoker_dtl {
     struct constructor
     {
 	template<typename... Args>
-	X operator()(Args&&... args) const { return X(std::forward<Args>(args)...); } 
+	X operator()(Args&&... args) const { return X(std::forward<Args&&>(args)...); } 
     };
+
+    template<typename X>
+    struct build
+    {
+	template<typename... Args>
+	static 
+	constexpr X with(Args&&... args)
+	{
+	    return X(std::forward<Args&&>(args)...);
+	} 
+    };
+
     
 } // namesapce invoker_dtl
 } // namespace nargs

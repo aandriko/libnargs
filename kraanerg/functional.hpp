@@ -42,7 +42,7 @@ namespace fold_dtl {
     {
 	using type =  F< typename foldl_<F, Z, XR...>::type, X0 >;
     };
-    
+  
 } // namespace fold_dtl
 } // namespace kraanerg
 
