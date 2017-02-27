@@ -35,15 +35,15 @@ void copy_test()
     };
 
     x a;
-    act::nargs::signature<int, x>::invoke(
+    nargs::signature<int, x>::invoke(
 	[](int, x){ std::cout << "copy_test::invoke" << std::endl; }, std::move(a), 2);
     
 }
 
 int main()
 {
-    using namespace act::kraanerg;
-    using namespace act::nargs;
+    using namespace kraanerg;
+    using namespace nargs;
 
     struct s1
     {
@@ -96,17 +96,17 @@ int main()
 
 	return v;
     };
-
+/*
     auto g = narg_signature<height, cost, width>::callable(something_to_do);
     g(height(3), cost(nullptr), width(2));
     
-    using act::nargs::invoker_dtl::signature_dtl::first_signature_converts_to_second;
+    using nargs::invoker_dtl::signature_dtl::first_signature_converts_to_second;
     
     first_signature_converts_to_second< signature<height, cost, width>,
 					 signature<height&&, cost, width> >::eval();
     
     
-    act::nargs::signatures
+    nargs::signatures
     <
 	signature<width>, 
 	signature<height, cost>,
@@ -114,7 +114,7 @@ int main()
 	signature<height, cost, width>,
 	signature<height, cost, depth, width>
 	>::lax::invoke(g, height(3), width(2), cost(nullptr)); 
-
+*/
 
     {
 	struct x
@@ -163,6 +163,24 @@ int main()
     int i{};
     signature<int&>::lax::invoker( [](int& j){ j = 5;})(i);
     std::cout << i << std::endl;
+    
+    {
+	auto silly_lambda = [](int x, int y, bool z, double w)
+        {
+	    std::cout << "x = " << x << " : y = " << y
+	    << " : z = " << z << " : w = " << w << std::endl;
+	};
+
+	NARG_PAIR(x, int);
+	NARG_PAIR(y, int);
+	NARG_PAIR(z, int);
+	NARG_PAIR(w, double);
+
+	auto nice_lambda = signature< x, y, z, w >::strict::invoker(std::move(silly_lambda));
+
+	nice_lambda( w(1.3), x(-2.001), z(0), y(-1) );
+	    
+    }
     
 }
     

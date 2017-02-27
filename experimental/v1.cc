@@ -25,8 +25,8 @@ struct z{ };
 
 int main()
 {
-    using namespace act::nargs;
-    using namespace act::nargs::invoker_dtl;
+    using namespace nargs;
+    using namespace nargs::invoker_dtl;
 
     z val{};
     x val_x{};

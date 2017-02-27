@@ -3,8 +3,6 @@
 
 #include <type_traits>
 
-namespace act      {
-
 namespace kraanerg {
 
     template<typename... Terms>
@@ -98,7 +96,5 @@ namespace kraanerg {
     };
         
 } // namespace kraanerg
-
-} // namespace act
 
 #endif //  ACT_KRAANERG_SYNTAX_INC

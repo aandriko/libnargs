@@ -4,8 +4,6 @@
 #include "kraanerg/syntax.hpp"
 #include "kraanerg/functional.hpp"
 
-namespace act       {
-
 namespace kraanerg  {
 
     template<typename... > struct list;
@@ -142,7 +140,5 @@ namespace kraanerg {
 
     
 } // namespace kraanerg
-
-} // namespace act
 
 #endif // ACT_KRAANERG_LIST_INC

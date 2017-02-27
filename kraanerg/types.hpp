@@ -4,8 +4,6 @@
 #include <type_traits>
 #include "syntax.hpp"
 
-namespace act       {
-
 namespace kraanerg  {
 namespace types_dtl {
         
@@ -137,7 +135,5 @@ namespace kraanerg
     using false_ = bool_<false>;	
     
 } // namespace kraanerg
-
-} // namespact act
     
 #endif // KRAANERG_TYPES_INC

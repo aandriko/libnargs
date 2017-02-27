@@ -4,8 +4,6 @@
 #include "syntax.hpp"
 #include "types.hpp"
 
-namespace act      {
-
 namespace kraanerg {
 namespace fold_dtl {
 
@@ -83,7 +81,5 @@ namespace kraanerg
     }
 
 } //namespace kraanerg
-
-} // namespace act
 
 #endif // ACT_KRAANERG_FUNCTIONAL_INCLUDED

@@ -5,8 +5,6 @@
 #include "types.hpp"
 #include <type_traits>
 
-namespace act       {
-
 namespace kraanerg  { 
 namespace logic_dtl { 
 	
@@ -29,7 +27,7 @@ namespace logic_dtl {
 }
 
 namespace kraanerg {
-namespace logic   {
+namespace logic    {
     
     template<typename S, typename T>
     using and_ = bool_<logic_dtl::and_<S, static_cast<bool>(kraanerg::eval<T>()) >::eval() >;
@@ -95,7 +93,5 @@ namespace kraanerg {
     }
   
 } // namespace kraanerg
-
-} // namespace act
 
 #endif // ACT_KRAANERG_SET_HPP_INC
