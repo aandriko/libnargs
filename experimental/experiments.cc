@@ -45,9 +45,6 @@ int main()
     using namespace act::kraanerg;
     using namespace act::nargs;
 
-//    copy_test();
-
-    
     struct s1
     {
 	s1() {}
@@ -65,10 +62,6 @@ int main()
 	s2(s2&&) { } 
     };
 
-
-//    signatures< signature<s1&&> >::invoke( [](s1){} , s1{} );
-  
-    
     int s42 = 42;
     s1 a;
     signatures
@@ -122,19 +115,50 @@ int main()
 	signature<height, cost, depth, width>
 	>::lax::invoke(g, height(3), width(2), cost(nullptr)); 
 
-    std::cout << "------------- encapsulates arithmetic type: "
-	      << std::boolalpha
-	      << std::endl;
+
+    {
+	struct x
+	{
+	    x(int, char*, double* ) { }
+	    x(int&&) { }
+	    x(double*, int) { }
+	    x(x&&)      { std::cout << "in x(x&&)" << std::endl; }
+	    x(x const&) { std::cout << "in x(x const&)" << std::endl; }
+	    x() { std::cout << "x::x()" << std::endl; }
+	    x(x&&, void**) { } 
+	};
+
+	signatures
+	<
+	    signature<int, char*, double*>,
+	    signature<int&&>,
+	    signature<double*, int>,
+	    signature<>
+//	    , signature<x&&, int>   (GUT, daß das nicht funktioniert!!!!)
+	    ,signature<x&&, void**>
+	    
+	    >::strict::builder<x> b;
+
+	x result = b(static_cast<void**>(nullptr), x{});
 
 
-    using act::nargs::invoker_dtl::encapsulates_arithmetic_type;
-    
-    std::cout << false << " : " << encapsulates_arithmetic_type<int const>() << std::endl
-	      << true << " : " << encapsulates_arithmetic_type<int const&>() << std::endl
-	      << true << " : " << encapsulates_arithmetic_type<int&&     >() << std::endl
-	      << false << " : " << encapsulates_arithmetic_type<int       >() << std::endl
-	      << false << " : " << encapsulates_arithmetic_type<int*      >() << std::endl
-	      << false << " : " << encapsulates_arithmetic_type<void*     >() << std::endl
-	      << false << " : " << encapsulates_arithmetic_type<int [4]   >() << std::endl;
+//	b(3.4, (double*)nullptr);
+
+	/*
+	auto inv =
+	signature<x &, char>::lax::invoker 
+	(
+	    [](x & a, char y)
+	    {
+		std::cout << &a << " : " 
+			  << y << std::endl;
+	    }
+	);
+
+	inv('a', x{});
+	*/  
+
+    }
+
 }
     

@@ -94,7 +94,7 @@ namespace nargs {
 	class invoker_t
 	{
 	public:
-	    constexpr invoker_t(F&& f) : f_(f) {}
+	    constexpr invoker_t(F&& f) : f_(std::forward<F&&>(f)) {}
 
 	    template<typename... PermutedArgs>
 	    constexpr auto operator()(PermutedArgs&&... permuted_args) const
@@ -163,8 +163,7 @@ namespace signature_dtl {
     {
 	enum { value = 0 };
     };
-    
-    
+        
     template<typename Signature, typename H, typename... T>
     struct number_of_signature_matches<Signature, H, T... >
     {
@@ -306,13 +305,12 @@ namespace nargs {
 	using strict = signatures_<signature_dtl::lvalue_reference_wrapping::no, Signatures...>;
 	using lax    = signatures_<signature_dtl::lvalue_reference_wrapping::yes, Signatures...>;
 	
-	template<typename F, typename... Args>
-	static constexpr auto invoke(F&& f, Args&&... args)
+	template<typename F, typename... PermutedArgs>
+	static constexpr auto invoke(F&& f, PermutedArgs&&... args)
 	{
-	    return signature_from_arguments<Args...>::invoke(std::forward<F&&>(f), std::forward<Args&&>(args)...);
+	    return signature_from_arguments<PermutedArgs...>::
+		invoke(std::forward<F&&>(f), std::forward<PermutedArgs&&>(args)...);
 	}
-
-//////////// Trial: 
 
 	template<typename F>
 	class invoker_t
@@ -341,11 +339,10 @@ namespace nargs {
 	    static
 	    X with(PermutedArgs && ... permuted_args)
 	    {
-
-		// get Args....
 		return invoke
 		    (
-			signature_from_arguments<PermutedArgs...>::constructor::address(),
+			signature_from_arguments<PermutedArgs...>::
+			template builder<X>::constructor::address(),
 
 			std::forward<PermutedArgs&&>(permuted_args)...
 		    );				       
@@ -358,15 +355,12 @@ namespace nargs {
 	    template<typename... PermutedArgs>
 	    constexpr X operator()(PermutedArgs&&... permuted_args) const
 	    {
-		return build<X>::template with<PermutedArgs...>
+		return build<X>::template with<PermutedArgs&&...>
 		    (
-			signature_dtl::reference_policy<policy>::
-			template wrap<PermutedArgs&&>(permuted_args)...
+			std::forward<PermutedArgs&&>(permuted_args)...
 		    );
 	    }
 	};
-	
-/////////// end of trial
     };
 
     template<typename... Signatures>
