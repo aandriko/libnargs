@@ -1,8 +1,6 @@
 #ifndef ACT_NARGS_NARGS_INC
 #define ACT_NARGS_NARGS_INC
 
-namespace act     {
-
 namespace nargs   {
     
     template<typename Key, typename Element>
@@ -10,99 +8,28 @@ namespace nargs   {
     {
     public:
 	template<typename... Args>
-	explicit wrapper(Args &&... args) : elem_(std::forward<Args>(args)...) { }
-	
-	explicit wrapper(Element const& elem) : elem_(elem) { }
-	wrapper(wrapper const& other)         : elem_(other.elem_) { }
-	wrapper(wrapper && other)             : elem_(std::move(other.elem_)) { } 
+	explicit wrapper(Args &&... args) : elem_(std::forward<Args &&>(args)...) { }
+	explicit wrapper(Element     && elem) : elem_(std::move(elem)) { }
+	explicit wrapper(Element const& elem) : elem_(elem) { } 
 
-	
-	operator Element&&()              { return static_cast<Element&&>(elem_); }
-//	operator Element&()               { return static_cast<Element&> (elem_); }
-	operator Element const&()  const { return static_cast<Element const&>(elem_); }
-//	operator Element const&&() const { return static_cast<Element const&&>(elem_); }
-	
-	template<typename S>
-	S explicit_cast_to() const { return static_cast<S>(elem_); }
-	
+	wrapper(wrapper const& )           = default;
+	wrapper(wrapper && )               = default; 
+
 	wrapper& operator=(wrapper const&) = default;
+	wrapper& operator=(wrapper &&    ) = default;
 	
+	operator Element&&()        { return static_cast<Element&&>(elem_); }
+
+	Element const& cref() const { return elem_; }
+	Element const& ref()  const { return cref(); }
+	Element&       ref()        { return elem_; }
+		
     private:
-	mutable Element elem_; // very dirty, needs fixing!
+	Element elem_; 
     } ;
 
-#define NARG_PAIR( x, ... ) class x##tag;  using x = ::act::nargs::wrapper<x##tag, __VA_ARGS__>
+#define NARG_PAIR( x, ... ) class x##tag;  using x = nargs::wrapper<x##tag, __VA_ARGS__>
     
 } // namespace nargs
 
-namespace nargs     {
-namespace nargs_dtl {
-
-    template<typename T>
-    struct naked
-    {
-	using type = T;
-    };
-    
-    template<typename Key, typename Elem>
-    struct naked<nargs::wrapper<Key, Elem>& >
-    {
-	using type = Elem&;
-    };
-    
-    template<typename Key, typename Elem>
-    struct naked<nargs::wrapper<Key, Elem> const& >
-    {
-	using type = Elem const&;
-    };
-    
-    template<typename Key, typename Elem>
-    struct naked<nargs::wrapper<Key, Elem> && >
-    {
-	using type = Elem &&;
-    };
-    
-    template<typename Key, typename Elem>
-    struct naked<nargs::wrapper<Key, Elem> const && >
-    {
-	using type = Elem const &&;
-    };
-
-} // namespace nargs_dtl
-} // namespace nargs
-
-namespace nargs {
-
-    template<typename F, typename... Nargs>
-    struct narg_callable
-    {
-	narg_callable(F&& f) : f_(f) { }
-	
-	auto operator()(Nargs&&... nargs) const
-	{
-	    return std::forward<F>(f_)
-		(
-		    ((std::forward<Nargs>(nargs))
-		     .template explicit_cast_to<typename nargs_dtl::naked<Nargs&&>::type >())...
-		    );
-//	    ( static_cast<typename naked<Nargs&&>::type >(nargs)...);
-	}
-	
-	F&& f_;
-    };
-    
-    template<typename... Nargs>
-    struct narg_signature
-    {
-	template<typename F>
-	static narg_callable<F, Nargs...> callable(F&& f)
-	{
-	    return narg_callable<F, Nargs...>(std::forward<F>(f));
-	}
-    };
-
-} // namespace nargs
-
-} // namespace act
-    
 #endif // #define ACT_NARGS_NARGS_INC

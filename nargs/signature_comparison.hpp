@@ -5,8 +5,6 @@
 #include "kraanerg/set.hpp"
 #include <type_traits>
 
-namespace act           {
-
 namespace nargs         {
 namespace invoker_dtl   {
 namespace signature_dtl { 
@@ -23,30 +21,14 @@ namespace signature_dtl {
     template<typename X, typename H, typename... T>
     struct count_fits<X, kraanerg::list<H, T...> >
     {
-	using decay_X = typename std::decay<X>::type;
-	enum { value =
-	       bool(
-		   
-		   std::is_convertible<X, H>::value
-/*
-		   &&
-
-		   !
-		   (
-		       ( std::is_same< decay_X const&, X>::value
-		       ||
-		       std::is_same< decay_X const*, X>::value )
-		     &&
-		       ( std::is_same< decay_X &, X>::value
-		       ||
-		       std::is_same< decay_X *, X>::value )
-		       )		  
-*/
-		   )
-
-	       
-	       +
-	       count_fits<X, kraanerg::list<T...> >::value };
+	enum
+	{
+	    value =
+		
+		bool(std::is_convertible<X, H>::value)	       
+		+
+		count_fits<X, kraanerg::list<T...> >::value
+	};
     };
 
     template<typename Number, typename Count>
@@ -128,7 +110,5 @@ namespace signature_dtl {
 } // namespace signature_dtl  
 } // namespace invoker_dtl   
 } // namesapce nargs
-
-} // namespace act
     
 #endif //  ACT_NARGS_SIGNATURE_COMPARISON_INC

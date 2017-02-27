@@ -7,19 +7,9 @@
 #include <utility>
 #include "signature_comparison.hpp"
 
-namespace act         {
-
 namespace nargs       {
 namespace invoker_dtl {
 
-    // arithmectic_capsule_ cases:
-    // A is an arithmetic type with one of:
-    // (a) T = A&&
-    // (b) T = std::reference_wrapper< const A& >
-
-//    template<typename T>
-//    using wrapped_reference = T;
-    
     template<typename T>
     struct remove_reference_wrapper_and_decay_
     {
@@ -35,6 +25,11 @@ namespace invoker_dtl {
     template<typename T>
     using remove_reference_wrapper_and_decay =
 	typename remove_reference_wrapper_and_decay_<T>::type;
+
+    // arithmectic_capsule_ cases:
+    // A is an arithmetic type with one of:
+    // (a) T = A&&
+    // (b) T = std::reference_wrapper< const A& >
 
     template<typename T>
     constexpr bool encapsulates_arithmetic_type()
@@ -149,11 +144,8 @@ namespace invoker_dtl {
 	    return X(std::forward<Args&&>(args)...);
 	} 
     };
-
     
 } // namesapce invoker_dtl
 } // namespace nargs
-
-} // namespace act
     
 #endif // ACT_NARGS_ENCAPSULATOR_INC

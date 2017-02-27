@@ -9,8 +9,6 @@
 #include "signature_comparison.hpp"
 #include "nargs.hpp"
 
-namespace act           {
-
 namespace nargs         {
 namespace signature_dtl {
 
@@ -368,7 +366,5 @@ namespace nargs {
 				   Signatures... >;
 
 } // namespace nargs
-
-} // namespace act
     
 #endif // ACT_NARGS_SIGNATURES_INC
