@@ -76,7 +76,12 @@ namespace invoker_dtl {
 		 >		 	
 	operator Capsule() const
 	{
-	    return capsule<Ref>(static_cast<Ref>(ref_));
+	    using ref_or_ar_val = 
+		typename std::conditional< encapsulates_arithmetic_type<Ref>(),
+					   typename std::decay<Ref>::type,
+					   Ref>::type;
+	    
+	    return capsule<Ref>(static_cast<ref_or_ar_val>(ref_));
 	}
 
 	reference content() { return std::forward<reference>(ref_); }

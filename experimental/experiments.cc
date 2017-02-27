@@ -142,9 +142,9 @@ int main()
 	x result = b(static_cast<void**>(nullptr), x{});
 
 
-//	b(3.4, (double*)nullptr);
+	b(3.4, (double*)nullptr);
 
-	/*
+	
 	auto inv =
 	signature<x &, char>::lax::invoker 
 	(
@@ -154,11 +154,15 @@ int main()
 			  << y << std::endl;
 	    }
 	);
-
-	inv('a', x{});
-	*/  
+	x some_obj { };
+	inv('a', some_obj);
+	  
 
     }
 
+    int i{};
+    signature<int&>::lax::invoker( [](int& j){ j = 5;})(i);
+    std::cout << i << std::endl;
+    
 }
     
