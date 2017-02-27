@@ -114,7 +114,7 @@ namespace kraanerg {
 	using push_back = list<Head, Tail..., X>;
 
 	using reverse = typename tail::reverse::template push_back<head>;
-
+	
 	template<template<typename> class Pred>
 	using select = typename
 	    fold
@@ -122,6 +122,7 @@ namespace kraanerg {
 	      list_dtl::selector_aux<Pred>::template operation,
 	      list<>
 	    >::template left<Head, Tail...>;
+	
     };
 
     namespace list_dtl

@@ -1,10 +1,4 @@
-#include "kraanerg/syntax.hpp"
-#include "kraanerg/types.hpp"
-#include "kraanerg/list.hpp"
-#include "kraanerg/set.hpp"
-#include "nargs/encapsulator.hpp"
-#include "nargs/signature_comparison.hpp"
-#include "nargs/signatures.hpp"
+
 #include "nargs/nargs.hpp"
 
 #include <iostream>
@@ -96,10 +90,7 @@ int main()
 
 	return v;
     };
-/*
-    auto g = narg_signature<height, cost, width>::callable(something_to_do);
-    g(height(3), cost(nullptr), width(2));
-    
+
     using nargs::invoker_dtl::signature_dtl::first_signature_converts_to_second;
     
     first_signature_converts_to_second< signature<height, cost, width>,
@@ -113,8 +104,8 @@ int main()
 	signature<height, cost, depth>,
 	signature<height, cost, width>,
 	signature<height, cost, depth, width>
-	>::lax::invoke(g, height(3), width(2), cost(nullptr)); 
-*/
+	>::lax::invoke(something_to_do, height(3), width(2), cost(nullptr)); 
+
 
     {
 	struct x
@@ -134,7 +125,7 @@ int main()
 	    signature<int&&>,
 	    signature<double*, int>,
 	    signature<>
-//	    , signature<x&&, int>   (GUT, daß das nicht funktioniert!!!!)
+//	    , signature<x&&, int>   (GUT, daß das nicht funktioniert!!!!, denn int kann in x gecastet werden, Vieldeutigkeit.)
 	    ,signature<x&&, void**>
 	    
 	    >::strict::builder<x> b;
@@ -164,7 +155,10 @@ int main()
     signature<int&>::lax::invoker( [](int& j){ j = 5;})(i);
     std::cout << i << std::endl;
     
+
     {
+	//////////////////// Simple example with named arguments ////////////
+
 	auto silly_lambda = [](int x, int y, bool z, double w)
         {
 	    std::cout << "x = " << x << " : y = " << y
@@ -181,6 +175,5 @@ int main()
 	nice_lambda( w(1.3), x(-2.001), z(0), y(-1) );
 	    
     }
-    
 }
     

@@ -70,7 +70,7 @@ namespace kraanerg
 	template<typename... X>
 	using left =  typename fold_dtl::foldl_<F, Z, X...>::type;
     };
-
+    
     namespace bound
     {
 	template<typename bound_F, typename Z>
@@ -79,7 +79,7 @@ namespace kraanerg
 	template<typename Bound_F, typename Int>
 	using pow = kraanerg::pow<Bound_F::template apply_subterms, static_cast<int>(eval<Int>()) >;
     }
-
+    
 } //namespace kraanerg
 
 #endif // ACT_KRAANERG_FUNCTIONAL_INCLUDED

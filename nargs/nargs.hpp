@@ -1,6 +1,8 @@
 #ifndef ACT_NARGS_NARGS_INC
 #define ACT_NARGS_NARGS_INC
 
+#include "signatures.hpp"
+
 namespace nargs   {
     
     template<typename Key, typename Element>
