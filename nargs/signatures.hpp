@@ -138,8 +138,17 @@ namespace nargs {
 			template wrap<PermutedArgs&&>(permuted_args)...
 		    );
 	    }
+		
+	    struct constructor
+	    {
+		static
+		constexpr X (*address())(Args&&... )
+		{
+		    return & build<X>::template with<Args...>;
+		}
+	    };
 	};
-	
+
     };
 }
 
@@ -282,19 +291,82 @@ namespace nargs {
 	static_assert( signature_dtl::signatures_consistent<Signatures...>(),
 		       "The set of chosen signatures is inconsistent: in certain cases a unique signatures cannot be chosen." );
 
+	template<typename... Args>
+	using signature_from_arguments =
+
+	    typename signature_dtl::set_ref_wrapping_policy
+	    <
+	        policy, 
+	    
+	        typename signature_dtl::pick_candidate< signature<Args&&...>, 
+							Signatures...>::type
+
+	    >::type;
+	
 	using strict = signatures_<signature_dtl::lvalue_reference_wrapping::no, Signatures...>;
 	using lax    = signatures_<signature_dtl::lvalue_reference_wrapping::yes, Signatures...>;
 	
 	template<typename F, typename... Args>
 	static constexpr auto invoke(F&& f, Args&&... args)
 	{
-	    using sig_ = typename signature_dtl::pick_candidate< signature<Args&&...>, 
-								Signatures...>::type;
-	    using sig = typename signature_dtl::set_ref_wrapping_policy<policy, sig_>::type;
-	    
-	    return sig::invoke(std::forward<F&&>(f), std::forward<Args&&>(args)...);
+	    return signature_from_arguments<Args...>::invoke(std::forward<F&&>(f), std::forward<Args&&>(args)...);
 	}
+
+//////////// Trial: 
+
+	template<typename F>
+	class invoker_t
+	{
+	public:
+	    constexpr invoker_t(F&& f) : f_(f) {}
+	    
+	    template<typename... PermutedArgs>
+	    constexpr auto operator()(PermutedArgs&&... permuted_args) const
+	    {
+		return invoke(std::forward<F&&>(f_),
+			      std::forward<PermutedArgs&&>(permuted_args)... );
+	    }
+	    
+	private:
+	    F&& f_;
+	};
+
+	template<typename F>
+	static constexpr invoker_t<F> invoker(F&& f) { return invoker_t<F>(std::forward<F&&>(f)); }
 	
+	template<typename X>
+	struct build
+	{	    
+	    template<typename... PermutedArgs>
+	    static
+	    X with(PermutedArgs && ... permuted_args)
+	    {
+
+		// get Args....
+		return invoke
+		    (
+			signature_from_arguments<PermutedArgs...>::constructor::address(),
+
+			std::forward<PermutedArgs&&>(permuted_args)...
+		    );				       
+	    }
+	};
+
+	template<typename X>
+	struct builder
+	{
+	    template<typename... PermutedArgs>
+	    constexpr X operator()(PermutedArgs&&... permuted_args) const
+	    {
+		return build<X>::template with<PermutedArgs...>
+		    (
+			signature_dtl::reference_policy<policy>::
+			template wrap<PermutedArgs&&>(permuted_args)...
+		    );
+	    }
+	};
+	
+/////////// end of trial
     };
 
     template<typename... Signatures>
