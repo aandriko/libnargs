@@ -1,5 +1,5 @@
 
-#include "nargs/nargs.hpp"
+#include "nargs.hpp"
 
 #include <iostream>
 

@@ -2,8 +2,8 @@
 #include <functional>
 #include <type_traits>
 
-#include "nargs/encapsulator.hpp"
-#include "nargs/signatures.hpp"
+#include "nargs_dtl/encapsulator.hpp"
+#include "signatures.hpp"
 
 struct x
 {
