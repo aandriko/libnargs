@@ -83,7 +83,7 @@ of the 7! = 5040 possible orders. For instance the following call leads to the s
 	   	      InternalFormat(internalFormat_), Target(target_), 
 		      Height(height_), Width(width_) );
 
-
+The full example can be found in the listing examples/example-gl-function.cpp
 
 b) A BUILDER EXAMPLE:
 
