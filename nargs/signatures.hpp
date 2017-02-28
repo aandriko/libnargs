@@ -5,8 +5,8 @@
 #include "kraanerg/list.hpp"
 #include "kraanerg/types.hpp"
 
-#include "encapsulator.hpp"
-#include "signature_comparison.hpp"
+#include "nargs_dtl/encapsulator.hpp"
+#include "nargs_dtl/signature_comparison.hpp"
 #include "nargs.hpp"
 
 namespace nargs         {

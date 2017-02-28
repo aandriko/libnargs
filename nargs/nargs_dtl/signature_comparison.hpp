@@ -1,8 +1,8 @@
 #ifndef ACT_NARGS_SIGNATURE_COMPARISON_INC
 #define ACT_NARGS_SIGNATURE_COMPARISON_INC
 
-#include "kraanerg/quantifiers.hpp"
-#include "kraanerg/list.hpp"
+#include "../kraanerg/quantifiers.hpp"
+#include "../kraanerg/list.hpp"
 
 #include <type_traits>
 

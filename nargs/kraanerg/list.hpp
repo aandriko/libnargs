@@ -1,8 +1,8 @@
 #ifndef ACT_KRAANERG_LIST_INC
 #define ACT_KRAANERG_LIST_INC
 
-#include "kraanerg/syntax.hpp"
-#include "kraanerg/functional.hpp"
+#include "syntax.hpp"
+#include "functional.hpp"
 
 namespace kraanerg  {
 
