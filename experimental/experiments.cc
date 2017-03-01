@@ -152,10 +152,17 @@ int main()
     }
 
     int i{};
-    signature<int&>::lax::invoker( [](int& j){ j = 5;})(i);
+    signature<int& >::lax::
+	invoker( [](int& j){ j = 5; })(std::ref(i));
     std::cout << i << std::endl;
-    
 
+    // reference_wrapper<int> problematic!!!!;
+
+    char* asdf;
+    signature<std::reference_wrapper<char*> >::lax::
+	invoker( []( std::reference_wrapper<char*> j){  })(std::ref(asdf));
+
+    
     {
 	//////////////////// Simple example with named arguments ////////////
 
