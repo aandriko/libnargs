@@ -49,8 +49,8 @@ DOCUMENTATION:
 Given in the following files:
 
 doc/README
-doc/nargs.hpp.txt
-doc/signatures.hpp.txt
+doc/nargs.txt
+doc/signatures.txt
 
 
 EXAMPLES:
