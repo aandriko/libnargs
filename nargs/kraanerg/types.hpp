@@ -90,13 +90,6 @@ namespace kraanerg
 
     template<template<typename...> class F, typename... Args>
     using lazy = bound::lazy< function<F>, Args...>;
-/*
-    namespace unbound
-    {
-	template<template<typename...> class F, typename... Args>
-	using lazy = typename kraanerg::types_dtl::lazy_<function<F>, Args...>::desired_type;
-    }
-*/
 
     // Types
     template<typename T> struct hull { using type = T; };

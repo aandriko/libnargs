@@ -99,21 +99,29 @@ namespace nargs {
 	class invoker_t
 	{
 	public:
-	    constexpr invoker_t(F&& f) : f_(std::forward<F&&>(f)) {}
+	    invoker_t(F f)   : f_(f) {}
 
+	    invoker_t(invoker_t const&)            = default;
+	    invoker_t(invoker_t&& )                = default;
+	    invoker_t& operator=(invoker_t const&) = default;
+	    invoker_t& operator=(invoker_t&&)      = default;
+	    
 	    template<typename... PermutedArgs>
 	    constexpr auto operator()(PermutedArgs&&... permuted_args) const
 	    {
-		return invoke(std::forward<F&&>(f_),
+		return invoke(F{f_},
 			      std::forward<PermutedArgs&&>(permuted_args)... );
 	    }
 	    
 	private:
-	    F&& f_;
+	    F f_;
 	};
 
 	template<typename F>
-	static constexpr invoker_t<F> invoker(F&& f) { return invoker_t<F>(std::forward<F&&>(f)); }
+	static invoker_t<F> invoker(F f)
+	{
+	    return invoker_t<F>(std::move(f));
+	}
 	
 	template<typename X>
 	struct build
@@ -124,13 +132,16 @@ namespace nargs {
 	    {
 		return invoke
 		    (
-			& invoker_dtl::build<X>::template with<Args...>,
-
+			[](Args&&... args)
+			{
+			    return X(std::forward<Args&&>(args)...);
+			},
+			
 			std::forward<PermutedArgs&&>(permuted_args)...
 		    );				       
 	    }
 	};
-
+    
 	template<typename X>
 	struct builder
 	{
@@ -152,6 +163,7 @@ namespace nargs {
 		    return & build<X>::template with<Args...>;
 		}
 	    };
+
 	};
 
     };
@@ -281,8 +293,6 @@ namespace signature_dtl {
     {
 	using type = typename Signature::strict; 
     };
-
-    
     
 } // namespace signature_dtl
 } // namespace nargs
@@ -353,7 +363,7 @@ namespace nargs {
 		    );				       
 	    }
 	};
-
+    
 	template<typename X>
 	struct builder
 	{

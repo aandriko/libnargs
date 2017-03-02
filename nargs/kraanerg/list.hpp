@@ -140,7 +140,6 @@ namespace kraanerg {
 	    template<typename List, typename Elem>
 	    using operation = typename cond< Pred<Elem>,
 					     lazy<List::template push_front, Elem>,
-//					     hull<List>, 
 					     hull<List> >::type;
 	};
 

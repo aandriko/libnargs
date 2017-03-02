@@ -37,7 +37,15 @@ namespace nargs   {
 	Element elem_; 
     } ;
 
-#define NARG_PAIR( x, ... ) class x##tag;  using x = nargs::wrapper<x##tag, __VA_ARGS__>
+#define NARG_PAIR( x, ... ) class x##_tag;  using x = nargs::wrapper<x##_tag, __VA_ARGS__>
+    
+#define NARG_CALLABLE_WITH_ADL( callable, ... )		      \
+                                                              \
+    template<typename... Args>                                \
+    auto callable ( Args&&... args )			      \
+    {                                                         \
+	return __VA_ARGS__ ( std::forward<Args&&>(args)... ); \
+    }
     
 } // namespace nargs
 

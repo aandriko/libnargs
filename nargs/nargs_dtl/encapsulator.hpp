@@ -134,24 +134,6 @@ namespace invoker_dtl {
 	}
     };
 
-    template<typename X>
-    struct constructor
-    {
-	template<typename... Args>
-	X operator()(Args&&... args) const { return X(std::forward<Args&&>(args)...); } 
-    };
-
-    template<typename X>
-    struct build
-    {
-	template<typename... Args>
-	static 
-	constexpr X with(Args&&... args)
-	{
-	    return X(std::forward<Args&&>(args)...);
-	} 
-    };
-    
 } // namesapce invoker_dtl
 } // namespace nargs
     
