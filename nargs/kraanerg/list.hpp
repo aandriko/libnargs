@@ -14,29 +14,25 @@
 namespace kraanerg  {
 
     template<typename... > struct list;
-    
-    namespace list_dtl
-    {
-	template<typename...> struct tail_;
-	
-	template<>
-	struct tail_<>  { using type = list<>; };
-	
-	template<typename H, typename... T>
-	struct tail_<H, T...> { using type = list<T...>; };
-    }
-    
-    // concatenate lists:
+} 
 
-    namespace list_dtl
-    {
+namespace kraanerg {
+namespace list_dtl {
+ 
+    template<typename...> struct tail_;
     
-	template<typename...> struct concatenate_;
-	
-	template<>
-	struct concatenate_<>
-	{
-	    using type = list<>;
+    template<>
+    struct tail_<>  { using type = list<>; };
+    
+    template<typename H, typename... T>
+    struct tail_<H, T...> { using type = list<T...>; };
+
+    template<typename...> struct concatenate_;
+    
+    template<>
+    struct concatenate_<>
+    {
+	using type = list<>;
     };
     
     template<typename... Args>
@@ -53,7 +49,7 @@ namespace kraanerg  {
 	using type = typename concatenate_<list<Args0..., Args1...>,
 					   OtherLists...>::type;
     };
-
+    
 } // namespace list_dtl
 } // namespace kraanerg
 
@@ -134,18 +130,81 @@ namespace kraanerg {
 
     namespace list_dtl
     {
-	template<template<typename> class Pred>
-	struct selector_aux
-	{
-	    template<typename List, typename Elem>
-	    using operation = typename cond< Pred<Elem>,
-					     lazy<List::template push_front, Elem>,
-					     hull<List> >::type;
-	};
-
+	template<template<typename> class, typename, typename, typename>
+	struct partition_;
     }
 
+    template<template<typename> class F, typename List>
+    using partition = list_dtl::partition_<F, List, kraanerg::list<>, kraanerg::list<> >;
     
+} // namespace kraanerg
+
+namespace kraanerg {
+namespace list_dtl {
+    
+    template<template<typename> class Pred>
+    struct selector_aux
+    {
+	template<typename List, typename Elem>
+	using operation = typename cond< Pred<Elem>,
+					 lazy<List::template push_front, Elem>,
+					 hull<List> >::type;
+    };
+        
+    // code for partition
+    template<typename T>
+    struct back_inserter
+    {
+	template<typename List>
+	using modify = typename List::template push_back<T>;
+    };
+    
+    struct do_nothing
+    {
+	template<typename List>
+	using modify = List;
+    };
+    
+    template<typename T1, typename T2>
+    struct pair
+    {
+	using first  = T1;
+	using second = T2;
+    };
+    
+    template<template<typename> class F,
+	     typename List,
+	     typename First, typename Second>
+    struct partition_;
+    
+    template<template<typename> class F, typename First, typename Second>
+    struct partition_<F, kraanerg::list<>, First, Second>
+    {
+	using first  = First;
+	using second = Second;	       
+    };
+    
+    template<template<typename> class F,
+	     typename H, typename... T,
+	     typename First, typename Second>
+    struct partition_<F, kraanerg::list<H, T...>, First, Second>
+    {
+	using action = typename
+	    std::conditional< kraanerg::eval<F<H> >(),
+			      pair< back_inserter<H>, do_nothing >,
+			      pair< do_nothing, back_inserter<H> > >::type;
+	
+	using aux =  partition_<F,
+				kraanerg::list<T...>,
+				typename action::first::template modify<First>,
+				typename action::second::template modify<Second> >;
+	
+	using first  = typename aux::first;
+	using second = typename aux::second;
+    };
+    
+    
+} // namespace list_dtl
 } // namespace kraanerg
 
 #endif // ACT_KRAANERG_LIST_INC
