@@ -2,7 +2,7 @@ CXX      = clang++
 CXXFLAGS = -std=c++1z -I../nargs -Wall -pedantic -g
 LDFLAGS  = -L/usr/local/lib
 
-binder : binder.cc
+binder: binder.cc
 	$(CXX) $(CXXFLAGS) -o binder binder.cc
 
 experiments: experiments.cc 
