@@ -12,7 +12,9 @@
 #include <type_traits>
 #include <memory>
 #include <utility>
-#include "signature_comparison.hpp"
+#include "nargs_dtl/signature_comparison.hpp"
+#include "default_arg_policy.hpp"
+#include "nargs_dtl/split_signature.hpp"
 
 namespace nargs       {
 namespace invoker_dtl {
@@ -117,21 +119,61 @@ namespace invoker_dtl {
 	}
     };
 
-    template<typename... Args>
+    template<default_args, typename... Args>
     struct invoker
     {
-	template<typename F, typename... PermutedArgs>
-	auto operator()(F&& f, PermutedArgs&&... permuted_args ) const
+	struct without_default_arguments
 	{
-	    encapsulator<Args &&...> e
-	    (
-		encapsulator<PermutedArgs && ...>
-		(
-		    std::forward<PermutedArgs>(permuted_args)...
-		)
-	    );
-	    return e.invoke(std::forward<F&&>(f));
-	}
+	    template<typename F, typename... PermutedArgs>
+	    static auto call(F&& f, PermutedArgs&&... permuted_args ) 
+	    {
+		encapsulator<Args &&...> e
+		    (
+			encapsulator<PermutedArgs && ...>
+			(
+			    std::forward<PermutedArgs &&>(permuted_args)...
+			    )
+			);
+		return e.invoke(std::forward<F&&>(f));
+	    }
+	};
+
+	struct with_default_arguments
+	{	    	    
+	    template<typename F, typename... PermutedArgs>
+	    static auto call(F&& f, PermutedArgs&&... permuted_args ) 
+	    {		
+		using split = typename nargs::signature_dtl::fix_args_to_be_bound<PermutedArgs...>::template split< nargs::signature<Args...> >;
+
+		static_assert(split::valid, "Error: Function call incompoatible with signature!");
+		using free_signature_in_list = typename split::free_signature_in_list;
+
+
+		encapsulator<Args &&...> e
+		    (
+			encapsulator<PermutedArgs && ...>
+			(
+			    std::forward<PermutedArgs&&>(permuted_args)...
+			    // here I need the other parameters.!!!!!!!!!!!!
+			    
+			    )
+			);
+		return e.invoke(std::forward<F&&>(f));
+	    }
+	};
+
+	template<typename F, typename... PermutedArgs>
+	auto operator()(F&& f, PermutedArgs&&... permuted_args )
+	{
+	    static_assert(sizeof...(PermutedArgs) <= sizeof...(Args), "");
+	    return 
+		std::conditional< sizeof...(PermutedArgs) == sizeof...(Args),
+				  without_default_arguments,
+				  with_default_arguments
+				>::type::
+		call(std::forward<F&&>(f),
+		     std::forward<PermutedArgs&&>(permuted_args)...);
+	}	
     };
 
 } // namesapce invoker_dtl

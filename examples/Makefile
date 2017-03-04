@@ -1,4 +1,4 @@
-#CXX      = clang++                                   # replace by g++ if desired
+CXX      = clang++                                   # replace by g++ if desired
 CXXFLAGS = -std=c++1z -I../nargs -Wall -pedantic -g
 
 example-gl-function     : example-gl-function.cpp

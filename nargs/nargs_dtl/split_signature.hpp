@@ -13,7 +13,13 @@
 #include "kraanerg/list.hpp"
 #include <type_traits>
 
-namespace nargs               {
+namespace nargs {
+
+    template<typename...> struct signature; // defined in signature.hpp
+
+}
+
+namespace nargs         {
 namespace signature_dtl {
     
     template<typename to>
@@ -48,10 +54,10 @@ namespace signature_dtl {
 		    valid = bool( partition_::first::template apply<kraanerg::count_terms >::value == sizeof...(args_to_be_bound)   )
 		};
 
-		
 		using bound_signature_in_list = typename std::conditional
 		    < valid,
-		      kraanerg::list< typename partition_::first::template apply<nargs::signature>  >,
+		      kraanerg::list< typename partition_::first::template
+				      apply<nargs::signature>  >,
 		      kraanerg::list<>
 		      >::type;
 		

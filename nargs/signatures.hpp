@@ -14,7 +14,8 @@
 
 #include "nargs_dtl/encapsulator.hpp"
 #include "nargs_dtl/signature_comparison.hpp"
-#include "nargs.hpp"
+//#include "nargs.hpp"
+#include "default_arg_policy.hpp"
 
 namespace nargs         {
 namespace signature_dtl {
@@ -66,6 +67,9 @@ namespace signature_dtl {
 
 namespace nargs {
 
+//    enum class default_args : bool { yes = true, no = false };
+//    in default_arg_policy;    
+    
     template<signature_dtl::lvalue_reference_wrapping, typename... Args>
     struct signature_;
 
@@ -85,17 +89,31 @@ namespace nargs {
 	using lax    = signature_<signature_dtl::lvalue_reference_wrapping::yes,
 				  Args...>;	
 
-	template<typename F, typename... PermutedArgs>
+	template<
+	    default_args default_arg_policy = default_args::no,
+	    typename F, typename... PermutedArgs>
 	static constexpr auto invoke(F && f, PermutedArgs && ... perm_args)
 	{
-	    return invoker_dtl::invoker<Args...>()	    	    
+	    return invoker_dtl::invoker<default_arg_policy, Args...>()  
 	    (
 		signature_dtl::reference_policy<policy>::wrap(std::forward<F&&>(f)),
 		signature_dtl::reference_policy<policy>::wrap(std::forward<PermutedArgs&&>(perm_args))...
 	    ); 
 	}
 
-	template<typename F>
+	struct with_default_args
+	{
+	    template<typename F, typename... PermutedArgs>
+	    static constexpr auto invoke(F && f, PermutedArgs && ... perm_args)
+	    {
+		return signature_<policy, Args... >::invoke< default_args::yes >
+		    ( std::forward<F&&>(f),
+		      std::forward<PermutedArgs&&>(perm_args)...
+		    );
+	    }
+	};
+	  	
+	template<typename F, default_args default_arg_policy = default_args::no>
 	class invoker_t
 	{
 	public:
@@ -109,28 +127,44 @@ namespace nargs {
 	    template<typename... PermutedArgs>
 	    constexpr auto operator()(PermutedArgs&&... permuted_args) const
 	    {
-		return invoke(F{f_},
-			      std::forward<PermutedArgs&&>(permuted_args)... );
+		using this_signature =
+		    signature_<policy, Args...>;
+		    
+		using choose_default_args_policy
+		    = typename
+		    std::conditional
+		    <
+		      default_arg_policy == default_args::yes,
+		      typename this_signature::with_default_args,
+		      this_signature
+		    >::type;
+		      
+		    
+		return choose_default_args_policy::invoke(
+		    F{f_},
+		    std::forward<PermutedArgs&&>(permuted_args)... );
 	    }
 	    
 	private:
 	    F f_;
 	};
 
-	template<typename F>
-	static invoker_t<F> invoker(F f)
+	template<default_args default_args_policy = default_args::no,
+		 typename F>
+	static invoker_t<F, default_args_policy> invoker(F f)
 	{
-	    return invoker_t<F>(std::move(f));
+	    return invoker_t<F, default_args_policy>(std::move(f));
 	}
 	
-	template<typename X>
+	template<typename X,
+		 default_args default_args_policy = default_args::no >
 	struct build
 	{
 	    template<typename... PermutedArgs>
 	    static
 	    X with(PermutedArgs && ... permuted_args)
 	    {
-		return invoke
+		return invoke//<default_args_policy>
 		    (
 			[](Args&&... args)
 			{
@@ -167,7 +201,7 @@ namespace nargs {
 	};
 
     };
-}
+    }
 
 namespace nargs         {
 namespace signature_dtl {
