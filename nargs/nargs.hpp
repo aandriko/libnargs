@@ -18,8 +18,8 @@ namespace nargs   {
     public:
 	template<typename... Args>
 	explicit wrapper(Args &&... args) : elem_(std::forward<Args &&>(args)...) { }
-	explicit wrapper(Element     && elem) : elem_(std::move(elem)) { }
-	explicit wrapper(Element const& elem) : elem_(elem) { } 
+//	explicit wrapper(Element     && elem) : elem_(std::move(elem)) { }
+//	explicit wrapper(Element const& elem) : elem_(elem) { } 
 
 	wrapper(wrapper const& )           = default;
 	wrapper(wrapper && )               = default; 

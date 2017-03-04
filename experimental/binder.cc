@@ -3,23 +3,9 @@
 #include <functional>
 #include "signatures.hpp"
 #include "nargs.hpp"
+#include "default_arg_policy.hpp"
+#include <tuple>
 
-template<typename T>
-struct default_argument
-{
-    constexpr operator T() const { return T(); }
-};
-
-template<typename Key, typename Element>
-struct default_argument< nargs::wrapper<Key, Element> >
-{
-    constexpr operator nargs::wrapper<Key, Element>() const
-    {
-	return nargs::wrapper<Key, Element>{ Element() };
-    }
-};
-
-// specialise capsule for default_argument!!!
 template<typename Elem>
 class capsule
 {
@@ -31,10 +17,16 @@ public:
     Elem const& cref() const { return elem_; }
     Elem const& ref()  const { return cref(); }
     Elem      & ref()        { return elem_; }
-   
+
+    Elem element() const { return elem_; }
+    
 private:
     Elem elem_;
 };
+
+template<typename S>
+struct default_generator { S element() const { return S{}; } };
+
 
 template<typename, typename> class narg_binder_;
 
@@ -45,7 +37,7 @@ class narg_binder_<
 		 >
     : public capsule<ArgsToBind>...
 {
-//protected:
+// protected not working?
 public:
     template<typename... PermutedArgsToBind>
     explicit narg_binder_(narg_binder_<PermutedArgsToBind...>&& b)
@@ -56,18 +48,26 @@ public:
     { }
 };
 
-template<typename, typename> struct narg_binder;
+template<typename, typename, nargs::default_args> struct narg_binder;
 
-template<typename... ArgsToBind, typename... FreeArgs>
+template<typename... ArgsToBind, typename... FreeArgs,
+	 nargs::default_args default_arg_policy>
 struct narg_binder<
         	    nargs::signature<ArgsToBind...>,
-		    nargs::signature<FreeArgs...>
+                    nargs::signature<FreeArgs...>,
+                    default_arg_policy
 		  >
     : public narg_binder_<
 			   nargs::signature<ArgsToBind...>,
 			   nargs::signature<FreeArgs...>
 			 >
 {
+    using this_type = narg_binder<
+	                          nargs::signature<ArgsToBind...>,
+	                          nargs::signature<FreeArgs...>,
+                                  default_arg_policy
+	                         >;
+
     template<typename... PermutedArgsToBind>
     narg_binder(PermutedArgsToBind const&... permuted_args_to_bind)
 	: narg_binder_<
@@ -81,16 +81,66 @@ struct narg_binder<
 	        permuted_args_to_bind...
 	    )
 	    
-       )
+       )	
     { }
+    
+    template<typename... ArgsToAccess>
+    auto caccess() const
+    {
+	return std::tie( static_cast<capsule<ArgsToAccess const&> >(*this).cref() ... );
+    }
 
+    template<typename... ArgsToAccess>
+    auto access() const
+    {
+	return caccess<ArgsToAccess...>();
+    }
+
+    template<typename... ArgsToAccess>
+    auto access()
+    {
+	return std::tie( static_cast<capsule<ArgsToAccess&> >(*this).ref() ... );
+    }
+
+private:
+    template<typename S>
+    S get_argument_(std::nullptr_t, ...) const
+    {
+	static_assert( default_arg_policy == nargs::default_args::yes,
+		       "Error: Attempt to use default arguments while " \
+		       "default argument policy is switched off. " );
+
+	return S{};
+    }
+    
+    template<typename S,
+	     typename = typename std::enable_if
+	       <
+		 std::is_base_of< capsule<S>, this_type >::value
+	       >::type
+	     >
+    S  get_argument_(std::nullptr_t, std::nullptr_t) const
+    {
+	return S {static_cast<capsule<S> const&>(*this).cref() };
+    }
+
+    template<typename S>
+    auto get_argument() const { return get_argument_<S>(nullptr, nullptr); }
+	
+    
+public:
+        
     template<typename Signature, typename F>
     auto invoke_with_signature(F&& f, FreeArgs&&... free_args)
     {
+
+	get_argument< typename kraanerg::list<ArgsToBind...>::head >();
 	return Signature::invoke
 	    (
 		std::forward<F&&>(f),
-		ArgsToBind { static_cast<capsule<ArgsToBind> const &>(*this).cref() } ... ,
+
+		get_argument<ArgsToBind>()..., 
+//		ArgsToBind { static_cast<capsule<ArgsToBind> const &>(*this).cref() } ... ,
 		std::forward<FreeArgs&&>(free_args)...);
     }
 
@@ -109,7 +159,9 @@ int main()
 
     using signature = nargs::signature<hello, world, again, message>::lax;
 
-    narg_binder< nargs::signature<hello, again>, nargs::signature<world, message> >
+    narg_binder< nargs::signature<hello, again>,
+		 nargs::signature<world, message>,
+		 nargs::default_args::yes >
 	binder ( hello{std::string("hello")}, again{std::string("again")} );
 
     auto f = [](std::string h, std::string w, std::string a, std::string m)
@@ -124,16 +176,8 @@ int main()
 
 
     binder.invoke_with_signature<signature>(f,
-					    world("world"), message("message") );
-
-    /*
-    decltype(binder) default_arg_binder( default_argument<hello>{},
-					 default_argument<again>{} );
-
-    
-    default_arg_binder.invoke_with_signature<signature>(f,
-					    world("world"), message("message") );
-    */
+					    world("world"),
+					    message("message") );
 
 }
 
