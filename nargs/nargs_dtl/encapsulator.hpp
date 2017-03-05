@@ -89,91 +89,86 @@ namespace invoker_dtl {
 	}
 
 	reference content() { return std::forward<reference>(ref_); }
-
+	
     private:
 
 	reference_or_arithmetic_value ref_;
     };
 
-    template<typename... Args>
-    struct encapsulator : public capsule<Args>...
+    struct no_default_args_in_encapsulator { };
+
+    struct default_args_in_encapsulator
     {
+	template<typename Ref>
+	typename std::decay<Ref>::type argument_(std::nullptr_t, ... )
+	{
+	    return typename std::decay<Ref>::type {}; // default_argument
+	}
+    };
+
+    template<nargs::default_args policy>
+    using default_args_in_encapsulator_policy =
+	typename std::conditional< policy == default_args::yes,
+				   default_args_in_encapsulator,
+				   no_default_args_in_encapsulator >::type;
+    
+    
+    template<nargs::default_args policy, typename... Args>
+    struct encapsulator
+	: private default_args_in_encapsulator_policy<policy>,
+	  public capsule<Args>...
+    {
+    private:
 	static_assert(
-	    std::is_same<encapsulator<Args...>, encapsulator<Args&&...> >::value,
+	    std::is_same<encapsulator<policy, Args...>, encapsulator<policy, Args&&...> >::value,
 	    "" );
+	
+	template<typename Ref, typename =
+		 typename std::enable_if<std::is_convertible< encapsulator<policy, Args...>, capsule<Ref> >::value >::type >
+	auto argument_(std::nullptr_t, std::nullptr_t)
+	{
+	    return static_cast<capsule<Ref> >(*this).content();
+	}
+
+    public:
+	template<typename Ref>
+	auto argument() { return argument_<Ref>(nullptr, nullptr); }
+
 	
 	explicit encapsulator(Args... args)
 	    : capsule<Args>(std::forward<Args>(args))...
 	{ } 
 
+	// PermutedArgs is a permuted subset of Args if the filling up with
+	// default values policy is chosen, otherwise PermutedArgs... is
+	// a permutation of Args...
 	template<typename... PermutedArgs>
-	explicit encapsulator(encapsulator<PermutedArgs...>&& other)
-	    : capsule<Args>(static_cast<capsule<Args> >(other))...
+	explicit encapsulator(encapsulator<policy, PermutedArgs...>&& other)
+	    : capsule<Args>(other.template argument<Args>())...
 	{ }
 	
 	template<typename F>
 	auto invoke(F&& f)
 	{	    
-	    return std::invoke( std::forward<F&&>(f),
-				static_cast<capsule<Args> >(*this).content()... );
+	    return std::invoke( std::forward<F&&>(f), argument<Args>()... );
 	}
     };
 
-    template<default_args, typename... Args>
+    template<nargs::default_args default_arg_policy, typename... Args>
     struct invoker
     {
-	struct without_default_arguments
-	{
-	    template<typename F, typename... PermutedArgs>
-	    static auto call(F&& f, PermutedArgs&&... permuted_args ) 
-	    {
-		encapsulator<Args &&...> e
-		    (
-			encapsulator<PermutedArgs && ...>
-			(
-			    std::forward<PermutedArgs &&>(permuted_args)...
-			    )
-			);
-		return e.invoke(std::forward<F&&>(f));
-	    }
-	};
-
-	struct with_default_arguments
-	{	    	    
-	    template<typename F, typename... PermutedArgs>
-	    static auto call(F&& f, PermutedArgs&&... permuted_args ) 
-	    {		
-		using split = typename nargs::signature_dtl::fix_args_to_be_bound<PermutedArgs...>::template split< nargs::signature<Args...> >;
-
-		static_assert(split::valid, "Error: Function call incompoatible with signature!");
-		using free_signature_in_list = typename split::free_signature_in_list;
-
-
-		encapsulator<Args &&...> e
-		    (
-			encapsulator<PermutedArgs && ...>
-			(
-			    std::forward<PermutedArgs&&>(permuted_args)...
-			    // here I need the other parameters.!!!!!!!!!!!!
-			    
-			    )
-			);
-		return e.invoke(std::forward<F&&>(f));
-	    }
-	};
-
 	template<typename F, typename... PermutedArgs>
 	auto operator()(F&& f, PermutedArgs&&... permuted_args )
 	{
-	    static_assert(sizeof...(PermutedArgs) <= sizeof...(Args), "");
-	    return 
-		std::conditional< sizeof...(PermutedArgs) == sizeof...(Args),
-				  without_default_arguments,
-				  with_default_arguments
-				>::type::
-		call(std::forward<F&&>(f),
-		     std::forward<PermutedArgs&&>(permuted_args)...);
-	}	
+	    encapsulator<default_arg_policy, Args &&...> e
+		(
+		    encapsulator<default_arg_policy, PermutedArgs && ...>
+		    (
+			std::forward<PermutedArgs &&>(permuted_args)...
+		    )
+		);
+	    return e.invoke(std::forward<F&&>(f));
+	}	   	
     };
 
 } // namesapce invoker_dtl

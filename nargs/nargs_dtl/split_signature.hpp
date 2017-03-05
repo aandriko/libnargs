@@ -21,6 +21,8 @@ namespace nargs {
 
 namespace nargs         {
 namespace signature_dtl {
+
+    class signature_error;
     
     template<typename to>
     struct token
@@ -56,15 +58,14 @@ namespace signature_dtl {
 
 		using bound_signature_in_list = typename std::conditional
 		    < valid,
-		      kraanerg::list< typename partition_::first::template
-				      apply<nargs::signature>  >,
-		      kraanerg::list<>
+		      typename partition_::first::template apply<nargs::signature>,
+		      signature_error
 		      >::type;
 		
 		using free_signature_in_list = typename std::conditional
 		    < valid,
-		      typename kraanerg::list< typename partition_::second::template apply<nargs::signature> > ,
-		      kraanerg::list<>
+		      typename partition_::second::template apply<nargs::signature>,
+		      signature_error
 		      >::type;
 	};
     };
