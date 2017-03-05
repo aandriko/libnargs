@@ -98,6 +98,8 @@ namespace nargs {
 	using with_default_args
 	= signature_< lval_ref_policy, nargs::default_args::yes, Args...>;
 
+	using without_default_args
+	= signature_< lval_ref_policy, nargs::default_args::no, Args...>;
 	
 	template<
 	    nargs::default_args other_default_arg_policy = default_args_policy,	    

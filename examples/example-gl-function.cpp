@@ -67,5 +67,33 @@ int main()
     improved_gl_function(Type(5), Format(4), 
 			 Height(3), Width(2),
 			 Data(nullptr),
-			 Target(0), InternalFormat(1));						   
+			 Target(0), InternalFormat(1));
+
+
+    auto improved_gl_function_with_default_args
+	= signature::with_default_args::invoker( & gluBuild2DMipmaps );
+
+    // Default-Arguments will be created for the parameters that are left out:
+    // (Data and Target, marked by an asterisk)
+    improved_gl_function_with_default_args(Type(5), Format(4), 
+					   Height(3), Width(2),
+//					   Data(nullptr),    // (*) automatic default
+//					   Target(0),        // (*) automatic default
+					   InternalFormat(1));
+
+
+    // The following code will not compile. The compilation error is desired:
+    /*
+    auto improved_gl_function_without_default_args
+	= signature::without_default_args::invoker( & gluBuild2DMipmaps );
+
+    // Default-Arguments will be created for the parameters that are left out:
+    // (Data and Target, marked by an asterisk)
+    improved_gl_function_without_default_args(Type(5), Format(4), 
+					      Height(3), Width(2),
+//					   Data(nullptr),    // (*) no automatic default
+//					   Target(0),        // (*) no automatic default
+					   InternalFormat(1));
+
+    */
 }

@@ -95,10 +95,31 @@ namespace invoker_dtl {
 	reference_or_arithmetic_value ref_;
     };
 
-    struct no_default_args_in_encapsulator { };
+    template<nargs::default_args, typename...>
+    struct encapsulator;
 
-    struct default_args_in_encapsulator
+    template<nargs::default_args, typename... >
+    struct default_arg_policy_implementation;
+
+    template<typename... Args>
+    struct default_arg_policy_implementation< nargs::default_args::yes, Args...>
     {
+    private:
+	using encapsulator_ = encapsulator<nargs::default_args::yes, Args...>;
+	
+	encapsulator_* this_()
+	{
+	    return static_cast<encapsulator_*>(this);
+	}
+
+    public:
+	template<typename Ref, typename =
+		 typename std::enable_if<std::is_convertible< encapsulator_, capsule<Ref> >::value >::type >
+	auto argument_(std::nullptr_t, std::nullptr_t)
+	{
+	    return static_cast<capsule<Ref> >(*this_()).content();
+	}
+
 	template<typename Ref>
 	typename std::decay<Ref>::type argument_(std::nullptr_t, ... )
 	{
@@ -106,33 +127,42 @@ namespace invoker_dtl {
 	}
     };
 
-    template<nargs::default_args policy>
-    using default_args_in_encapsulator_policy =
-	typename std::conditional< policy == default_args::yes,
-				   default_args_in_encapsulator,
-				   no_default_args_in_encapsulator >::type;
+    template<typename... Args>
+    struct default_arg_policy_implementation< nargs::default_args::no, Args...>
+    {
+    private:
+	using encapsulator_ = encapsulator< nargs::default_args::no, Args...>;
+	
+	encapsulator_* this_()
+	{
+	    return static_cast<encapsulator_*>(this);
+	}
+
+    public:
+	template<typename Ref, typename =
+		 typename std::enable_if<std::is_convertible< encapsulator_, capsule<Ref> >::value >::type >
+	auto argument_(std::nullptr_t, std::nullptr_t)
+	{
+	    return static_cast<capsule<Ref> >(*this_()).content();
+	}
+
+    };
+
     
     
     template<nargs::default_args policy, typename... Args>
     struct encapsulator
-	: private default_args_in_encapsulator_policy<policy>,
+	: public default_arg_policy_implementation<policy, Args...>,
 	  public capsule<Args>...
     {
     private:
 	static_assert(
 	    std::is_same<encapsulator<policy, Args...>, encapsulator<policy, Args&&...> >::value,
 	    "" );
-	
-	template<typename Ref, typename =
-		 typename std::enable_if<std::is_convertible< encapsulator<policy, Args...>, capsule<Ref> >::value >::type >
-	auto argument_(std::nullptr_t, std::nullptr_t)
-	{
-	    return static_cast<capsule<Ref> >(*this).content();
-	}
 
     public:
 	template<typename Ref>
-	auto argument() { return argument_<Ref>(nullptr, nullptr); }
+	auto argument() { return this->template argument_<Ref>(nullptr, nullptr); }
 
 	
 	explicit encapsulator(Args... args)
