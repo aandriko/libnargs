@@ -62,7 +62,7 @@ int main()
 			  Data(nullptr) );
 
     std::cout << std::endl
-	      << "Function call 2: Ppermuted order of input arguments. " << std::endl;
+	      << "Function call 2: Permuted order of input arguments. " << std::endl;
     
     improved_gl_function(Type(5), Format(4), 
 			 Height(3), Width(2),
@@ -71,29 +71,33 @@ int main()
 
 
     auto improved_gl_function_with_default_args
-	= signature::with_default_args::invoker( & gluBuild2DMipmaps );
+	= signature::function( & gluBuild2DMipmaps ).with_default_args( Data(nullptr), Target(20) );
+           
+    std::cout
+	<< "Default-Arguments will be created for the parameters that are left out: " << std::endl
+	<< "The following call will happen, with the arguments permutable: "          << std::endl
+	<< std::endl << std::endl
+	<< "improved_gl_function_with_default_args(Type(5), Format(4), "              << std::endl
+	<< "                                       Height(3), Width(2), "             << std::endl
+	<< "                                       InternalFormat(1)); "              << std::endl
+	<< std::endl << std::endl
+	<< "This expands to: "
+	<< std::endl << std::endl
+	<< "GLint gluBuild2DMipmaps( "                                                     << std::endl
+	<< "                        target = Target(20),   <----  default-argument" << std::endl
+	<< "                        internalFormat, " << std::endl
+	<< "                        width, "          << std::endl
+	<< "                        height, "         << std::endl
+	<< "                        format, "         << std::endl
+	<< "                        type, "           << std::endl
+	<< "                        data = Data(nullptr))  <---- default-argument" << std::endl
+	<< std::endl << std::endl;
 
-    // Default-Arguments will be created for the parameters that are left out:
-    // (Data and Target, marked by an asterisk)
-    improved_gl_function_with_default_args(Type(5), Format(4), 
-					   Height(3), Width(2),
-//					   Data(nullptr),    // (*) automatic default
-//					   Target(0),        // (*) automatic default
-					   InternalFormat(1));
 
+	improved_gl_function_with_default_args(Type(5), Format(4),
+					       Height(3), Width(2),
+					       InternalFormat(1));            
+//					       Data(nullptr),    // (*) automatic default
+//					       Target(0),        // (*) automatic default
 
-    // The following code will not compile. The compilation error is desired:
-    /*
-    auto improved_gl_function_without_default_args
-	= signature::without_default_args::invoker( & gluBuild2DMipmaps );
-
-    // Default-Arguments will be created for the parameters that are left out:
-    // (Data and Target, marked by an asterisk)
-    improved_gl_function_without_default_args(Type(5), Format(4), 
-					      Height(3), Width(2),
-//					   Data(nullptr),    // (*) no automatic default
-//					   Target(0),        // (*) no automatic default
-					   InternalFormat(1));
-
-    */
 }

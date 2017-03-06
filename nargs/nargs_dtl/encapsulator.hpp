@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 #include "nargs_dtl/signature_comparison.hpp"
-#include "default_arg_policy.hpp"
 #include "nargs_dtl/split_signature.hpp"
 
 namespace nargs       {
@@ -95,85 +94,50 @@ namespace invoker_dtl {
 	reference_or_arithmetic_value ref_;
     };
 
-    template<nargs::default_args, typename...>
-    struct encapsulator;
-
-    template<nargs::default_args, typename... >
-    struct default_arg_policy_implementation;
-
-    template<typename... Args>
-    struct default_arg_policy_implementation< nargs::default_args::yes, Args...>
+    struct silly_debug_collector
+    {
+	template<typename T> static T arg() { return T{}; }
+    };
+       
+    template<typename DefaultArgCollector, typename... Args>
+    struct encapsulator
+	: public capsule<Args>...
     {
     private:
-	using encapsulator_ = encapsulator<nargs::default_args::yes, Args...>;
-	
-	encapsulator_* this_()
-	{
-	    return static_cast<encapsulator_*>(this);
-	}
+	static_assert(
+//	    std::is_same<encapsulator<DefaultArgCollector, Args...>, encapsulator<policy, Args&&...> >::value,
+	    std::is_same< kraanerg::terms<Args...>, kraanerg::terms<Args&&...> >::value,
 
-    public:
+	    "" );
+
+	using encapsulator_ = encapsulator<DefaultArgCollector, Args...>;
+		
 	template<typename Ref, typename =
 		 typename std::enable_if<std::is_convertible< encapsulator_, capsule<Ref> >::value >::type >
 	auto argument_(std::nullptr_t, std::nullptr_t)
 	{
-	    return static_cast<capsule<Ref> >(*this_()).content();
+	    return static_cast<capsule<Ref> >(*this).content();
 	}
 
 	template<typename Ref>
 	typename std::decay<Ref>::type argument_(std::nullptr_t, ... )
 	{
-	    return typename std::decay<Ref>::type {}; // default_argument
+	    return DefaultArgCollector::template arg<typename std::decay<Ref>::type>(); // default_argument
 	}
-    };
-
-    template<typename... Args>
-    struct default_arg_policy_implementation< nargs::default_args::no, Args...>
-    {
-    private:
-	using encapsulator_ = encapsulator< nargs::default_args::no, Args...>;
-	
-	encapsulator_* this_()
-	{
-	    return static_cast<encapsulator_*>(this);
-	}
-
-    public:
-	template<typename Ref, typename =
-		 typename std::enable_if<std::is_convertible< encapsulator_, capsule<Ref> >::value >::type >
-	auto argument_(std::nullptr_t, std::nullptr_t)
-	{
-	    return static_cast<capsule<Ref> >(*this_()).content();
-	}
-
-    };
-
-    
-    
-    template<nargs::default_args policy, typename... Args>
-    struct encapsulator
-	: public default_arg_policy_implementation<policy, Args...>,
-	  public capsule<Args>...
-    {
-    private:
-	static_assert(
-	    std::is_same<encapsulator<policy, Args...>, encapsulator<policy, Args&&...> >::value,
-	    "" );
 
     public:
 	template<typename Ref>
 	auto argument() { return this->template argument_<Ref>(nullptr, nullptr); }
-
 	
 	explicit encapsulator(Args... args)
 	    : capsule<Args>(std::forward<Args>(args))...
 	{ } 
 
-	// PermutedArgs is a permuted subset of Args if the filling up with
-	// default values policy is chosen, otherwise PermutedArgs... is
-	// a permutation of Args...
+	// The encapsulator is filled with  PermutedArgs...
+	// Default-Arguments are initialised in accordance with the
+	// policy incepted by DefaultArgCollector
 	template<typename... PermutedArgs>
-	explicit encapsulator(encapsulator<policy, PermutedArgs...>&& other)
+	explicit encapsulator(encapsulator<DefaultArgCollector, PermutedArgs...>&& other)
 	    : capsule<Args>(other.template argument<Args>())...
 	{ }
 	
@@ -184,15 +148,15 @@ namespace invoker_dtl {
 	}
     };
 
-    template<nargs::default_args default_arg_policy, typename... Args>
+    template<typename DefaultArgCollector, typename... Args>
     struct invoker
     {
 	template<typename F, typename... PermutedArgs>
 	auto operator()(F&& f, PermutedArgs&&... permuted_args )
 	{
-	    encapsulator<default_arg_policy, Args &&...> e
+	    encapsulator<DefaultArgCollector, Args &&...> e
 		(
-		    encapsulator<default_arg_policy, PermutedArgs && ...>
+		    encapsulator<DefaultArgCollector, PermutedArgs && ...>
 		    (
 			std::forward<PermutedArgs &&>(permuted_args)...
 		    )

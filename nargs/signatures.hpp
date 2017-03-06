@@ -13,8 +13,9 @@
 #include "kraanerg/types.hpp"
 
 #include "nargs_dtl/encapsulator.hpp"
+#include "nargs_dtl/default_arg_collector.hpp"
 #include "nargs_dtl/signature_comparison.hpp"
-#include "default_arg_policy.hpp"
+
 
 namespace nargs         {
 namespace signature_dtl {
@@ -66,53 +67,43 @@ namespace signature_dtl {
 
 namespace nargs {
 
-//    enum class default_args : bool { yes = true, no = false };
-//    in default_arg_policy;    
-    
     template<signature_dtl::lvalue_reference_wrapping,
-	     nargs::default_args,
+	     typename DefaultArgCollector,
 	     typename... Args>
     struct signature_;
 
     template<typename... Args>
     struct  signature
 	: public signature_<signature_dtl::lvalue_reference_wrapping::no,
-			    nargs::default_args::no,
+			    invoker_dtl::no_default_arg_collector,
 			    Args...>
     { };
-				 
-    
+				     
     template<signature_dtl::lvalue_reference_wrapping lval_ref_policy,
-	     nargs::default_args default_args_policy,
+	     typename DefaultArgCollector, 
 	     typename... Args>
     struct signature_
-    {
+    {	
+	
+	
 	using strict = signature_<signature_dtl::lvalue_reference_wrapping::no,
-				  default_args::no,
+				  DefaultArgCollector,
 				  Args...>;
 
 	using lax    = signature_<signature_dtl::lvalue_reference_wrapping::yes,
-				  default_args::no,
+				  DefaultArgCollector, 
 				  Args...>;	
 
-	using with_default_args
-	= signature_< lval_ref_policy, nargs::default_args::yes, Args...>;
-
-	using without_default_args
-	= signature_< lval_ref_policy, nargs::default_args::no, Args...>;
-	
-	template<
-	    nargs::default_args other_default_arg_policy = default_args_policy,	    
-	    typename F, typename... PermutedArgs>
+	template<typename F, typename... PermutedArgs>
 	static constexpr auto invoke(F && f, PermutedArgs && ... perm_args)
 	{
-	    return invoker_dtl::invoker<other_default_arg_policy, Args...>()  
+	    return invoker_dtl::invoker<DefaultArgCollector, Args...>()  
 	    (
 		signature_dtl::reference_policy<lval_ref_policy>::wrap(std::forward<F&&>(f)),
 		signature_dtl::reference_policy<lval_ref_policy>::wrap(std::forward<PermutedArgs&&>(perm_args))...
 	    ); 
 	}
-	  	
+	
 	template<typename F>
 	class invoker_t
 	{
@@ -130,11 +121,11 @@ namespace nargs {
 		return invoke(F{f_},
 			      std::forward<PermutedArgs&&>(permuted_args)... );
 	    }
-	    
+
 	private:
 	    F f_;
 	};
-
+	
 	template<typename F>
 	static invoker_t<F> invoker(F f)
 	{
@@ -159,7 +150,7 @@ namespace nargs {
 		    );				       
 	    }
 	};
-    
+	
 	template<typename X>
 	struct builder
 	{
@@ -172,7 +163,7 @@ namespace nargs {
 			template wrap<PermutedArgs&&>(permuted_args)...
 		    );
 	    }
-		
+	    
 	    struct constructor
 	    {
 		static
@@ -181,8 +172,48 @@ namespace nargs {
 		    return & build<X>::template with<Args...>;
 		}
 	    };
-
+	    
 	};
+	
+	template<typename Collector, typename F, typename... DefaultArgs>
+	class invoker_with_default_args_t
+	{
+	public:
+	    using adjusted_collector = typename kraanerg::term<Collector>::template function<F, typename std::decay<DefaultArgs>::type...>;
+	    
+	    invoker_with_default_args_t(F&& f) : f_(std::forward<F&&>(f)) { } 
+	    
+	    auto operator()(DefaultArgs&&... default_args)
+	    {
+		adjusted_collector::template init_args<typename std::decay<DefaultArgs>::type... >(default_args...);
+		return  signature_<lval_ref_policy, adjusted_collector, Args...>::template invoker<F>(std::forward<F&&>(f_));
+	    }
+	private:
+	    F&& f_;
+	};
+
+	template<typename F, typename Collector>
+	class function_t
+	{
+	public:
+	    function_t(F&& f) : f_(std::forward<F&&>(f) ) { }
+	    
+	    template<typename... DefaultArgs>
+	    auto with_default_args(DefaultArgs&&... def_args)
+	    {
+		return invoker_with_default_args_t<Collector, F, DefaultArgs...>(std::forward<F&&>(f_))(std::forward<DefaultArgs&&>(def_args)...);
+	    }
+	private:
+	    F&& f_;
+	};
+
+	template<typename Collector = invoker_dtl::default_arg_collector<void>,
+		 typename F>
+	static
+	auto function(F&& f)
+	{
+	    return function_t<F, Collector>(std::forward<F&&>(f));
+	}
 
     };
    
