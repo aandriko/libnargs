@@ -9,8 +9,8 @@
 PURPOSE:
 ==========================================================================================
 
-Nargs provides a non-intrusive generative framework to incept the Python-feature
-of named arguments to callable objects in C++.
+Nargs is a non-intrusive generative framework which endows callable objects in C++
+with the Python-feature of named arguments.
 
 Nargs can be used to generate new interfaces, but it can also serve as a tool
 for non-intrusive improvement of the safety and readability of existing interfaces.
@@ -22,7 +22,7 @@ MOTIVATION:
 a) A SIMPLE USE CASE EXAMPLE WITH NAMED ARGUMENTS
 
 Software developers are often confronted with function interfaces that are error-prone
-and possibly difficult to commemorize. For example, let us consider the openGL function
+and possibly difficult to memorize. For example, let us consider the OpenGL function
 gluBuild2DMipmaps:
 
 
@@ -38,8 +38,8 @@ gluBuild2DMipmaps:
 The purpose of this function is not important to us. We are only interested in the many
 opportunities of misusing the function: We have many elements of identical type, so it is
 possible to confuse the order of inputs without receiving an error message or at least
-a warning at compile time. Obviously it is not possible to change the interface of an
-openGL function intrusively. In Nargs, we can improve the interface with a few lines of
+a warning at compile time. Obviously, it is not advisable to make intrusive changes int
+the C-API of OpenGL. In Nargs, we can improve the interface with a few lines of
 code:
 
 
@@ -54,30 +54,31 @@ code:
     NARG_PAIR(Data,       const void*);
 
     auto improved_funtion =
-      nargs::signatures<Target, InternalFormat,
-                        Width,  Height,
-			Format, Type, Data     >::invoker( & gluBuild2dMipmaps );
+      nargs::signature<Target, InternalFormat,
+                       Width,  Height,
+		       Format, Type, Data     >::callable( & gluBuild2dMipmaps );
 
 
 A possible call of the improved function looks as follows:
 
-    GLenum      target_ = ..;
+    GLenum      target_         = ..; // values arise from somewhere in the program
     GLint       internalFormat_ = ..;
-    GLsizei     width_ = ..;
-    GLsizei     height_ = ..;
-    GLenum      format_ = ..;
-    GLenum      type_ = ..;
-    const void* data_ = ..;
+    GLsizei     width_          = ..;
+    GLsizei     height_         = ..;
+    GLenum      format_         = ..;
+    GLenum      type_           = ..;
+    const void* data_           = ..;
 
     improved_function( Target(target_), InternalFormat(internalFormat_),
-	    	       Width(width_), Height(height_),
+	    	       Width(width_),   Height(height_),
 		       Format(format_), Type(type_), Data(data_) );
 
 
-In the call of improved_function above the order of the parameter wrappers follows the
-order of the wrapped elements in the signature of the original function
-gluBuild2DMipMaps, but that is not necessary. We can list the 7 wrapped parameters in any
-of the 7! = 5040 possible orders. For instance the following call leads to the same result:
+In the call of the function 'improved_function' above the order of the parameter wrappers
+follows the order of the wrapped elements in the signature of the original function
+gluBuild2DMipMaps. That however is not necessary. We can list the 7 wrapped parameters in
+any of the 7! = 5040 possible orders. For instance the following call leads to the same
+result:
 
     improved_function(Format(format_), Type(type_), Data(data_),
 	   	      InternalFormat(internalFormat_), Target(target_), 
@@ -105,18 +106,18 @@ Consider the following class for a date:
 
 Regardless how carefully we implement the assertion method check_validity_of_this_date()
 to ensure the validity of an input made by a user of the class, there is a certain risk
-inherent to the interface of date class, which cannot be eliminated by the assertion
-method. For instance a user might be accustomed to the order mm-dd-yyyy (mm month, dd day,
-yyyy year) for dates. If the user calls the date constructor
+inherent to the interface of the class, which cannot be eliminated. For instance a user
+might be accustomed to the order mm-dd-yyyy (mm month, dd day, yyyy year) for dates. If
+the user calls the date constructor
    
-    date(2, 3, 2016)
+    date(2, 3, 2016),
 
-then the valid date "March, 2nd, 2016" will be constructed. assert_validity() has no
-chance to detect that the user wanted "February, 3rd, 2016" as both dates are valid
-inputs. If we are able or willing to change the source code of date, this ambiguity
-problem can be fixed easily. But in many situations it is impossible or undesirable to
-change given source code with ambiguous interfaces. Then nargs gives a fast and easy
-non-intrusive solution. This can be done in four lines: 
+then the valid date "March, 2nd, 2016" will be constructed. The method
+assert_validity_of_this() cannot detect that the user wanted "February, 3rd, 2016" as
+both dates are valid inputs. If we are able or willing to change the source code of date,
+this ambiguity problem can be fixed easily. But in many situations it is impossible or
+undesirable to change given source code with ambiguous interfaces. Then nargs gives a fast
+and easy non-intrusive solution. This can be done in four lines: 
 
 
     NARG_PAIR(day,   int); 
@@ -131,41 +132,92 @@ parameters in the construction process of  dates. All of the six calls of create
 permuted arguments  will create "February, 3rd, 2016": 
 
 
-create_date(year(2016), month(2), day(3)); 
-create_date(year(2016), day(3), month(2)); 
-create_date(month(2), year(2016), day(3)); 
-create_date(day(3), year(2016), month(2));
-create_date(day(3), month(2), year(2016)); 
-create_date(month(2), day(3), year(2016)); 
+    create_date(year(2016), month(2), day(3)); 
+    create_date(year(2016), day(3), month(2)); 
+    create_date(month(2), year(2016), day(3)); 
+    create_date(day(3), year(2016), month(2));
+    create_date(day(3), month(2), year(2016)); 
+    create_date(month(2), day(3), year(2016)); 
 
 
 DESIGN-OBJECTIVES:
 ==========================================================================================
 
-It provides a generalisation of std::invoke for suitable signatures f(T1, ... , Tn)  with
-the following uniqueness condition:  no type Ti of an argument can be converted into the
-type Tj of an argument at another position . In this case the arguments for an invocation
-can be given in any order. (This behaviour cannot be implemented by hand, but needs a
-generative framework because of the factorial growth of the possible combinations).
+0) Non-Intrusiveness
+--------------------
+
+The framework can be applied to existing callables (including class constructors) without
+modifying their source code.
 
 
-1. Perfect Forwarding 
-2. Name Overloading
-3. Validity of signatures and signatures collections for permutation-invariant 
-invokations is checked at compile time 
-4. Apart from accepting permuted input orders, permutation-invariant invokations behave
-exactly like std::invoke, that is: permutation invariant invokations transfer their
-arguments to std::invoke in the right order. Left-value references must be wrapped by
-std::ref. (There is an additional policy to allow for the direct use of lvalue reference,
-but it is not default behaviour).
+1) Perfect Forwarding
+---------------------
+
+   Nargs essentially provides a permutation-invariant generalisation of std::invoke. 
+
+Consider n types T_1, ..., T_n, non of which is standard convertible into the other,
+elements t1, ..., tn of types T1, ... Tn respectively, and a callable object f of type F
+with a call operator F::operator()(T_1, ... T_n).
+
+For an arbitrary permutation s: {1, ..., n} --> {1, ..., n} we can make the following
+call:
+
+
+    nargs::signature<Args...>::invoke(f, t_{s(1)}, ... , t_{s(n)});                  (*)
+
+
+Irrespective of the choice of s possible invocations (*) evaluate to
+
+
+    std::invoke(std::forward<F>(f), std::forward<T_1>(t1), ... , std::forward<T_n>(t_n).
+
+
+Every feature of nargs is based on permutation-invariant invocations as in (*).
+
+Permutation-invariant invocations never involve copying of objects. Instead only
+references to objects are internally copied, forwarded, sorted and passed to std::invoke.
+
+
+2) Fast and easy applicability
+------------------------------
+Any callable object which takes n arguments can be provided with named arguments semantics
+in at most n+1 lines of code that can be entered locally at (almost) any scope.
+
+
+TODO:
+==========================================================================================
+Nargs has not reached the status of productive software yet. The most important tasks to
+be resolved in the near future:
+
+1) Extension to name overloading with multiple signatures.
+
+   Some preliminary work exists in signatures.hpp. (Previous proof of concept
+   implementations worked, but default arguments and a permutation invariant version of
+   std::bind was not supported).
+
+2) Improvement of compiler error messages.
+
+   At present, long and misleading compiler error message output is a considerable
+   challenge to the practical applicability of nargs.
+
+3) General TMP/Fusion-Features may be implemented using boost.hana.
+
+   Currently parts of a non-published prototypical nucleus of a TMP-library of my own are
+   used for this purpose (module kraanerg).
+
+4) Multi-platform support.
+
+   Previous proof of concept implementations were successfully tested with the
+   Intel-C++-compiler and with Visual Studio.
 
 
 COMPILATION:
 ==========================================================================================
-Nargs is a header-only library. It suffices to include either the header nargs.hpp or
-signature.hpp in the directory nargs. The header nargs.hpp include everything, whereas the
-header signatrues.hpp includes everything except the macro NARG_PAIR. Users are not
-required to use the macro NARG_PAIR.
+Nargs is a header-only library. It suffices to include either the header nargs.hpp of
+signatures.hpp in the directory nargs. The header nargs.hpp include everything, whereas
+the header signatures.hpp includes everything except the macro NARG_PAIR. 
+
+Users are not required to use the macro NARG_PAIR.
 
 C++17 prerequisite: Nargs uses the C++17-function std::invoke. Hence it is necessary to
 enable C++17 support via the appropriate compiler flags (-std=c++1z for gcc/clang).
@@ -176,5 +228,17 @@ API-REFERENCE:
 Confer to the following files:
 
 nargs.hpp.txt
+single_signature.hpp.txt
 signatures.hpp.txt
 
+
+Examples:
+==========================================================================================
+
+Examples can be found in ../examples.
+
+
+Feedback:
+==========================================================================================
+
+Feedback is most welcome. Please write to andreas.maniotis@gmail.com.

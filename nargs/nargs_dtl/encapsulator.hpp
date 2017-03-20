@@ -1,4 +1,4 @@
-//////////////////////////////////////////////////////////////////////////////////////////
+ //////////////////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2017 Andreas Milton Maniotis
 //
 // Distributed under the Boost Software License, Version 1.0.
@@ -12,159 +12,159 @@
 #include <type_traits>
 #include <memory>
 #include <utility>
+
 #include "nargs_dtl/signature_comparison.hpp"
 #include "nargs_dtl/split_signature.hpp"
+#include "nargs_dtl/default_arg_collector.hpp"
+#include "nargs_dtl/signature_utilities.hpp"
+
+#include <iostream>
 
 namespace nargs       {
 namespace invoker_dtl {
 
-    template<typename T>
-    struct remove_reference_wrapper_and_decay_
-    {
-	using type = typename std::decay<T>::type;
-    };
-
-    template<typename T>
-    struct remove_reference_wrapper_and_decay_< std::reference_wrapper<T> >
-    {
-	using type = typename std::decay<T>::type;
-    };
-
-    template<typename T>
-    using remove_reference_wrapper_and_decay =
-	typename remove_reference_wrapper_and_decay_<T>::type;
-
-    // arithmectic_capsule_ cases:
-    // A is an arithmetic type with one of:
-    // (a) T = A&&
-    // (b) T = std::reference_wrapper< const A& >
-
-    template<typename T>
-    constexpr bool encapsulates_arithmetic_type()
-    {
-	using X = remove_reference_wrapper_and_decay<T>;
-	
-	return
-	    std::is_arithmetic<X>::value
-	    &&
-	    (
-		std::is_same<X const&, T>::value
-		||
-		std::is_same<X&&, T>::value
-	    );
-    }
-	
     template<typename Reference>
     class capsule
     {
     private:
-	using reference_or_arithmetic_value
-	= typename std::conditional< encapsulates_arithmetic_type<Reference>(),
-				     typename std::decay<Reference>::type,
-				     Reference>::type;
-						      
+	Reference ref_;
+	static_assert(std::is_reference<Reference>::value, "");
+
     public:
-	static_assert(std::is_reference<Reference>::value ||
-		      encapsulates_arithmetic_type<Reference>() , "");
+	explicit capsule(Reference ref) : ref_(std::forward<Reference>(ref))
+	{ }
 	
-	using reference = Reference;
-	
-	explicit capsule(reference ref) : ref_(static_cast<reference_or_arithmetic_value>(ref))        { }
-	capsule(capsule const & other)  : ref_(static_cast<reference_or_arithmetic_value>(other.ref_)) { } 
-		
-	template<typename Capsule
-		 , typename Ref = typename Capsule::reference
-		 , typename =
-		 typename std::enable_if<std::is_convertible<reference, Ref>::value>::type 
-		 >		 	
-	operator Capsule() const
-	{
-	    using ref_or_ar_val = 
-		typename std::conditional< encapsulates_arithmetic_type<Ref>(),
-					   typename std::decay<Ref>::type,
-					   Ref>::type;
-	    
-	    return capsule<Ref>(static_cast<ref_or_ar_val>(ref_));
-	}
+	capsule(capsule const & other) : ref_(other.ref_) {} 
 
-	reference content() { return std::forward<reference>(ref_); }
-	
-    private:
-
-	reference_or_arithmetic_value ref_;
+	Reference get_reference() const { return std::forward<Reference>(ref_); }
     };
-
-    struct silly_debug_collector
-    {
-	template<typename T> static T arg() { return T{}; }
-    };
-       
-    template<typename DefaultArgCollector, typename... Args>
-    struct encapsulator
-	: public capsule<Args>...
+	
+    template<typename... Args>
+    struct encapsulator : public capsule<Args &&>...
     {
     private:
-	static_assert(
-//	    std::is_same<encapsulator<DefaultArgCollector, Args...>, encapsulator<policy, Args&&...> >::value,
-	    std::is_same< kraanerg::terms<Args...>, kraanerg::terms<Args&&...> >::value,
+	static_assert(std::is_same<
+		      kraanerg::terms<Args &&...>,
+		      kraanerg::terms<Args...> >::value, "" ); 
+	
+	using encapsulator_ = encapsulator<Args...>;
 
-	    "" );
+	template<typename Elem>
+	using capsule_for =
+	    capsule<signature_util::match<Elem, Args...> >;
 
-	using encapsulator_ = encapsulator<DefaultArgCollector, Args...>;
-		
-	template<typename Ref, typename =
-		 typename std::enable_if<std::is_convertible< encapsulator_, capsule<Ref> >::value >::type >
-	auto argument_(std::nullptr_t, std::nullptr_t)
+	/*
+	template<typename Elem>
+	using encapsulator_contains = typename std::enable_if_t
+	<
+	    std::is_convertible< encapsulator<Args...> const&,
+				 capsule< typename signature_util::match<Elem&&, Args&&...> > const&>::value
+        >;
+
+	template<typename Elem>
+	using encapsulator_lacks = typename std::enable_if_t
+	<
+	   ! std::is_convertible< encapsulator<Args...> const&,
+				  capsule< typename signature_util::match<Elem&&, Args&&...> > const&>::value
+        >;
+	*/
+
+	template<typename Elem>
+	    using encapsulator_contains = typename std::enable_if_t
+	    <
+		signature_util::dirty::first_casts_to_one_of_others<Elem, Args...>()
+	    >;
+
+    public:
+	template<typename Element>
+	Element argument() const
 	{
-	    return static_cast<capsule<Ref> >(*this).content();
-	}
-
-	template<typename Ref>
-	typename std::decay<Ref>::type argument_(std::nullptr_t, ... )
-	{
-	    return DefaultArgCollector::template arg<typename std::decay<Ref>::type>(); // default_argument
+	    using X = typename signature_util::match<Element&&, Args&&...>;
+	    return static_cast< capsule<X>const &>(*this).get_reference();
 	}
 
     public:
-	template<typename Ref>
-	auto argument() { return this->template argument_<Ref>(nullptr, nullptr); }
 	
-	explicit encapsulator(Args... args)
-	    : capsule<Args>(std::forward<Args>(args))...
+	template<typename Element,
+		 typename DefaultArgCollector
+		 ,typename = encapsulator_contains<Element>
+	        >
+	auto argument_(DefaultArgCollector &, std::nullptr_t, std::nullptr_t) const
+	    -> decltype(this->template argument<Element>())
+	{
+	    return this->template argument<Element>();
+	}
+	
+	template<typename Element,
+		 typename DefaultArgCollector,
+		 typename = std::enable_if_t<
+		     ! std::is_same<DefaultArgCollector,
+				    invoker_dtl::no_defaults>::value >
+		 // last argument avoids anger with no_defaults, which
+		 // is a concrete type that lacks a method arg<Element>()
+	        >	    
+	auto argument_(DefaultArgCollector & dac, std::nullptr_t, ... ) const
+	    -> decltype(dac.template arg<Element>())
+	{
+	    return dac.template arg<Element>();	    
+	}
+
+    public:
+	
+	template<typename Element, typename DefaultArgCollector>
+	auto argument(DefaultArgCollector & dac) const
+	    -> decltype(this->template argument_<Element, DefaultArgCollector>(dac, nullptr, nullptr))
+	{
+	    return this->template argument_<Element, DefaultArgCollector>(dac, nullptr, nullptr);
+	}
+	
+	encapsulator(encapsulator const &)            = delete;
+	encapsulator(encapsulator && )                = delete;
+	encapsulator& operator=(encapsulator const &) = delete;
+	encapsulator& operator=(encapsulator && )     = delete; 
+	
+	explicit encapsulator(Args ... args)
+	    : capsule<Args &&>(std::forward<Args>(args))...
 	{ } 
 
 	// The encapsulator is filled with  PermutedArgs...
 	// Default-Arguments are initialised in accordance with the
 	// policy incepted by DefaultArgCollector
-	template<typename... PermutedArgs>
-	explicit encapsulator(encapsulator<DefaultArgCollector, PermutedArgs...>&& other)
-	    : capsule<Args>(other.template argument<Args>())...
+
+	template<typename DefaultArgCollector, typename... PermutedArgs>
+	encapsulator(encapsulator<PermutedArgs...> & other,
+		     DefaultArgCollector & dac)	    
+	    : capsule<Args>(other.template argument_<Args, DefaultArgCollector>(dac, nullptr, nullptr))...
 	{ }
-	
+
 	template<typename F>
-	auto invoke(F&& f)
+	auto invoke(F&&  f)
 	{	    
-	    return std::invoke( std::forward<F&&>(f), argument<Args>()... );
+	    return std::invoke( std::forward<F>(f), argument<Args&&>()... );
 	}
     };
 
-    template<typename DefaultArgCollector, typename... Args>
-    struct invoker
+    template<typename... Args,
+	     typename DefaultArgCollector, typename F, typename... PermutedArgs>
+    auto invoker(DefaultArgCollector &  dac,
+		 F&& f,
+		 PermutedArgs&& ... permuted_args ) 
     {
-	template<typename F, typename... PermutedArgs>
-	auto operator()(F&& f, PermutedArgs&&... permuted_args )
-	{
-	    encapsulator<DefaultArgCollector, Args &&...> e
-		(
-		    encapsulator<DefaultArgCollector, PermutedArgs && ...>
-		    (
-			std::forward<PermutedArgs &&>(permuted_args)...
-		    )
-		);
-	    return e.invoke(std::forward<F&&>(f));
-	}	   	
-    };
+	using permuted_encapsulator =
+	    encapsulator<typename signature_util::match<PermutedArgs&& , Args&&...>...>;
+	permuted_encapsulator permuted_encaps
+	(
+	    static_cast<typename signature_util::match<PermutedArgs&& , Args&&...>  >
+	    (std::forward<PermutedArgs>(permuted_args))...
+       );
 
+
+	encapsulator<Args &&...> e(permuted_encaps, dac);
+
+	return e.invoke( std::forward<F>(f));
+
+    }	   	
+    
 } // namesapce invoker_dtl
 } // namespace nargs
     

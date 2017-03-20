@@ -30,7 +30,7 @@ namespace nargl
     NARG_PAIR(height, int);
 
     NARG_CALLABLE_WITH_ADL( init_window_size,
-			    nargs::signature<width, height>::invoker (&glutInitWindowSize) )
+			    nargs::signature<width, height>::callable (&glutInitWindowSize) );
 }
 // In the namespace nargl we create  a function template that
 // provides the GL function
@@ -62,11 +62,15 @@ int main(int argc, char** argv)
 
     // ADL working for nargl::init_window_size
     // The call evaluates to glutInitWindowSize(500, 300);
+//    init_window_size(nargl::height(300), nargl::width(500));
     init_window_size(nargl::height(300), nargl::width(500));
       
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Hello world :D");
     glutDisplayFunc(displayMe);
     glutMainLoop();
+
+    
+    
     return 0;
 }

@@ -51,7 +51,7 @@ int main()
 
     using signature = nargs::signature<Target, InternalFormat, Width,  Height, Format, Type, Data >;
     
-    auto improved_gl_function = signature::invoker( & gluBuild2DMipmaps );
+    auto improved_gl_function = signature::callable( & gluBuild2DMipmaps );
 
     std::cout << std::endl
 	      << "Function call 1: Unpermuted order of input arguments. " << std::endl;
@@ -69,10 +69,9 @@ int main()
 			 Data(nullptr),
 			 Target(0), InternalFormat(1));
 
+    auto improved_gl_function_with_default_args =
+	signature::defaults(Data(nullptr) ).defaults(Target(20)).callable( & gluBuild2DMipmaps );  
 
-    auto improved_gl_function_with_default_args
-	= signature::function( & gluBuild2DMipmaps ).with_default_args( Data(nullptr), Target(20) );
-           
     std::cout
 	<< "Default-Arguments will be created for the parameters that are left out: " << std::endl
 	<< "The following call will happen, with the arguments permutable: "          << std::endl
@@ -92,7 +91,6 @@ int main()
 	<< "                        type, "           << std::endl
 	<< "                        data = Data(nullptr))  <---- default-argument" << std::endl
 	<< std::endl << std::endl;
-
 
 	improved_gl_function_with_default_args(Type(5), Format(4),
 					       Height(3), Width(2),

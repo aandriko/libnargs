@@ -14,20 +14,25 @@ namespace nargs   {
 	template<typename... Args>
 	explicit wrapper(Args &&... args);
 
-	explicit wrapper(Element     && elem);
-	explicit wrapper(Element const& elem);
-
 	wrapper(wrapper const& )           = default;
 	wrapper(wrapper && )               = default;
 
 	wrapper& operator=(wrapper const&) = default;
 	wrapper& operator=(wrapper &&    ) = default;
 	
-	operator Element&&();
-
 	Element const& cref() const;
 	Element const& ref()  const;
 	Element&       ref();
+
+	operator Element const & ();
+	operator Element       & ();
+	operator Element      && ();
+
+	template<typename S>
+	operator S();
+
+	template<typename S>
+	operator S() const;
     } ;
 }
 
@@ -66,24 +71,23 @@ CONSTRUCTORS:
 (1)	template<typename... Args>
 	explicit wrapper(Args &&... args);
 
-(2)	explicit wrapper(Element     && elem);
-(3)	explicit wrapper(Element const& elem);
+(2')	explicit wrapper(Element     && elem);
+(3')	explicit wrapper(Element const& elem);
 
 
 	(1) creates a wrapper that holds a newly constructed element constructed
 	 by calling the constructor
 					Element(std::forward<Args&&>(args)...).
 
-        (2), (3) copy construct a wrapper object by copying elem
+        (2'), (3') copy construct a wrapper object by copying elem. The
+	constructors (2'), (3') do not explicitly appear in nargs.hpp. They are
+	covered by the constructor template (1). They are only mentioned to
+	show the frequent wrapper generation by using an element that has
+	already been constructed more explicitly.
 
 --------------------------------------------------------------------------------
 MEMBER FUNCTIONS:
 --------------------------------------------------------------------------------
-
-	operator Element&&();
-
-	Returns a right value reference to the element kept in the wrapper.
-
 
 (1)	Element const& cref() const;
 (2)	Element const& ref()  const;
@@ -93,12 +97,60 @@ MEMBER FUNCTIONS:
 
 
 --------------------------------------------------------------------------------
+CONVERSIONS:
+--------------------------------------------------------------------------------
+
+(1)	operator Element const & ();
+(2)	operator Element       & ();
+(3)	operator Element      && ();
+
+(4)	template<typename S> operator S();
+(5)	template<typename S> operator S() const;
+
+	The conversion functions are designed to allow for opaque use of
+	wrappers. Wrappers shall behave as if they were of type Element.
+	Whenever an Element, a reference to an Element, or a pointer to an
+	element is passed to a callable as a parameter, it shall be possible to
+	possible to pass wrappers.
+
+	It is impossible to cast an instantiation of the wrapper to a different
+	wrapper instantiation. This restriction is intended as the wrapper
+	template is meant to provide arguments with unique types, each of which
+	shall be passed to a callable at most once. If we could cast them into
+	each other, this uniqueness property would be lost.
+
+	In order to resolve name lookup conflicts, the actual declarations of
+	of the conversion operators contain additional template default
+	arguments, the sole purpose of which is name lookup disambiguation.
+
+	These parameters have been omitted because, albeit part of the
+	signature, they are implementation details that do not matter to a
+	user.
+
+	Still we give one example to the interested reader (it can be safely
+	omitted):
+
+	The operators (1), (2) are in fact declared in nargs.hpp
+	as follows:
+
+	   (1):  Element const& ();
+	    
+	   (2):  template<std::nullptr_t = nullptr>
+	    	 Element& ();
+
+	The template argument of type std::nullptr_t has the effect that the
+	cast (1) will always preferred over (2) when a name lookup conflict
+	needs to be resolved, because non-templates have a higher priority
+	than templates in the lookup process.
+	
+
+--------------------------------------------------------------------------------
 MACROS:
 --------------------------------------------------------------------------------
 
 	NARG_PAIR(x, ... )
 
-	creates a template  alias with name x to a type wrapper, which kepps
+	creates a template  alias with name x to a type wrapper, which keeps
 	elements of type __VA_ARGS__:
 
 	#define NARG_PAIR( x, ... ) class x##tag; \
@@ -121,9 +173,10 @@ MACROS:
 		    (2) Objects of this type  behave as if they  were
 		        of type some_ns::vec_3d
 
-		The exact shape of the type is unimportant to library. Users can
-		safely decide not to use the macro. Then they need to provide
-		either type wrappers of their own to satisfy (1) and (2).
+		The exact shape of the type is unimportant to the nargs
+		framework. Users can safely decide not to use the macro. Then
+		they need to provide either type wrappers of their own to
+		satisfy (1) and (2).
 
 		If a callable object shall be called with parameters of types,
 		which are pairwise not convertible into each other, then the
@@ -131,7 +184,7 @@ MACROS:
 		further need to wrap them.
 
 		    extern f(int, double*);
-		    auto f2 = signature<int, double*>::invoke(f);
+		    auto f2 = signature<int, double*>::callable(f);
 
 		    // f2 is permutation-invariant:
 
@@ -140,23 +193,24 @@ MACROS:
 		    
 		Call 1 and call 2 are equivalent.
 
-		In the following situation parameter wrapping is indespensible:
+		In the following situation the wrapping of at least one
+		parameter is indispensable:
 
 		    extern g(int, double);
 		    auto g2 = signature<int, double>::invoke(g); // ERROR
 		    	      		     			 		  
 		 The code above will not compile as int and double can be
-		 convertet into each other.
-		 A call of the form g2( 2, 2.3 ) would be ambiguous, because
-		 it could either mean
+		 converted into each other.
+		 A call of the form g2( 2, 2.3 ) would be ambiguous, because it
+		 could either mean
 					g( 2, 2.3)
 
 					   or
 
 					g(int(2.3), 2.0 ).
 
-		The amiguity can be resolved by using the NARG_PAIR macro
-		at least for one parameter:
+		The ambiguity can be resolved by using the NARG_PAIR macro
+		as follows:
 
 		    extern g(int, double);
 		    NARG_PAIR(X, int);
@@ -168,7 +222,8 @@ MACROS:
 
 		The disambiguation of parameter types is of course
 		not the only use for NARG_PAIR. The macro is also useful
-		to underline the semantic meaning of function parameters:
+		to underline the semantic meaning of function parameters
+		in general:
 
 		Example:
 			std::vector<std::string>

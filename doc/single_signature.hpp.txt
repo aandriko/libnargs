@@ -1,0 +1,348 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2017 Andreas Milton Maniotis
+//
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//////////////////////////////////////////////////////////////////////////////////////////
+
+namespace nargs {
+
+    template<typename... Args>
+    struct signature
+    {
+	template<typename F, typename... PermutedArgs>
+	static auto invoke(F && f, PermutedArgs && ... permuted_args);
+
+	template<typename F> struct callable_t
+
+	template<typename F>
+	static
+	callable_t<std::decay_t<F>> callable(F && f);
+
+	template<typename... Defaults>
+	static auto defaults(Defaults &&... default_args);
+
+	template<typename X>
+	static auto  builder();
+
+	template<typename X, typename... PermutedArgs>
+	static X build(PermutedArgs && ... permuted_args);
+
+    };
+
+--------------------------------------------------------------------------------
+PURPOSE:
+--------------------------------------------------------------------------------
+
+Provision of invokers and class builders for a fixed signature
+
+
+--------------------------------------------------------------------------------
+COMPILE TIME ASSERTIONS:
+--------------------------------------------------------------------------------
+
+signature<T_0, ... , T_r>  (0<= i <=r) leads to a compilation error if there are
+two values i != j such that either Ti is convertible into Tj. (Then two named
+arguments collide).
+
+--------------------------------------------------------------------------------
+STATIC MEMBER FUNCTIONS:
+--------------------------------------------------------------------------------
+
+template<typename... Args>
+template<typename F, typename... PermutedArgs>	
+
+std::invoke_result_t<F, Args...>
+signature<Args...>::invoke<F&& f, PermutedArgs&&... perm_args);
+
+
+Function Purpose: Permutation-invariant invocation function.
+
+    Let
+         Args...          = Arg_0, ... Arg_n
+	 Permuted_Args... =   P_0, ... P_n.
+
+    Assume that the following conditions hold:
+
+        (1) For each i (0 <= i <= n) there is exactly one number s(i) such that
+            P_{i}&& is implicitly convertible into A_{s(i)}&&.
+
+        (2) The mapping s : {0, ... n } --> {0, ... , n} is a permutation.
+
+
+    Consider objects p_k of type P_k and a callable f of type F such that
+    std::invoke_result_t<F, Args...> exists.
+
+
+    Then the following calls (*) and (**) below evaluate to the same result:
+
+        (*) signature<Args...>::
+            invoke(std::forward<F>(f), std::forward<P_1>(p_1),
+    	    		               ...,
+			       	       std::forward<P_n>(p_n));
+
+       (**) std::
+       	    invoke(std::forward<F>(f), static_cast<A_1 &&>(p_s(1))>,
+    	    			       ... ,
+			       	       static_cast<A_n &&>(p_{s(n)}>);
+
+-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+
+template<typename... Args>
+template<typename F>
+
+auto signature<Args...>::callable(F&& f)
+
+    Function Purpose:
+
+    Bind a callable object for permutation-invariant invocations.
+
+
+    Short and sloppy:
+
+    For Args... = Arg_1, ... , Arg_n, for elements p1..pn of types implicitly
+    convertible to Arg1..Arg_n respectively, and an arbitrary permutation
+    s: {0..n} --> {0..n} we witness
+
+       nargs::signature<Args...>::callable(f).invoke(p_{s(1)}, ... p_{s{n}})
+       ==
+       nargs::signature<Args...>::invoke(f, p1, ..., pn).
+
+
+    Detailed:
+
+    For elements p_k of type P_k (k=1..n) the following calls are
+    interchangeable in the sense that they either yield the same result and the
+    same side-effects that matter to the user, or both calls result in a compiler
+    error:
+
+    (*) nargs::
+	signature<Args...>::callable(std::forward<F>(f))(std::forward<P_1>(p_1),
+	                                                 ...,
+		     					 std::forward<P_k>(p_n));
+
+   (**) nargs::
+	signature<Args...>::invoke(std::forward<F>(f), std::forward<P_1>(p1),
+						       ...
+						       std::forward<P_n>(pn));
+
+
+    Example 1:
+    
+	auto f = signature<int, char const*>::callable(
+	            [](int x, char const* msg)
+		    {
+			std::cout << msg << " : " x << std::nedl;
+	            });
+
+        f is now permutation-invariant. Both calls lead to the same result:
+
+            f(2, "hello");
+	    f("hello, 2);
+
+
+    Example 2:
+
+        NARGS_PAIR( message, char const*);
+	NARGS_PAIR( value,   int        );
+
+        auto g = signature<value, message>::callable(
+	            [](int x, char const* msg)
+		    {
+			std::cout << msg << " : " x << std::nedl;
+	            });
+
+        g has Python-like named arguments semantics:
+
+            g(value(2), message("hello"));
+	    g(message("hello"), value(2));
+
+	The following calls result in a compiler error, because the wrappers
+	which are generated by the macro in NARGS_PAIR enforce explicit
+	construction:
+		
+	    g(2, message("hello"));
+	    g("hello", value(2));
+	    g("hello", 2);
+
+    Return type: The exact shape of the return type, which is an instantiation
+    	   	 of callable_t, is not important to the user. We recommend using
+		 auto when generating permutation invariant callables.
+
+		 It is only important that the return type has member function
+		 templates called bind and defaults as described in the section
+		 on member types.
+
+-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+
+template<typename... Args>
+template<typename X>
+auto
+signature<Args...>::builder<X>()
+
+Purpose: Provide permutation-invariant version of a constructor X::X(Args_ ...),
+         with the property that the types Args_&&... are implicitly convertible
+	 to Args&&... .
+
+	 This function realises the Builder-Software-Pattern when combined with
+	 reasonable named arguments (cf example builder.cpp in examples folder). 
+
+	 The function builder<X> returns an instance of callable_t, hence
+	 the methods defaults and bind described at the discussion of callable_t
+	 below are available. With theses methods it is possible to set default
+	 arguments and to bind arguments at arbitrary positions.
+
+	 It is noteworthy that default arguments, which must appear at the end
+	 of ordinary constructor signatures can appear at any position.
+	 
+
+
+template<typename... Args>
+template<typename X, typename... PermutedArgs>
+static X build(PermutedArgs && ... permuted_args)
+
+Purpose: Build type X from a permuted list of constructor arguments.
+
+Returns signature<Args>::callable(builder<X>(), std::forward<PermutedArgs>...).
+
+
+--------------------------------------------------------------------------------
+MEMBER TYPES:
+--------------------------------------------------------------------------------
+
+template<typename... Args>
+struct signature
+{
+     ...
+
+    template<typename F>
+    class callable_t
+    {		 
+    public:
+	callable_t(callable_t const&)             = default;
+	callable_t(callable_t &&    )             = default;
+
+	callable_t& operator=(callable_t const &) = default;
+	callable_t& operator=(callable_t &&     ) = default;
+
+	template<typename... PermutedArgs>
+	auto operator()(PermutedArgs&& ...) const
+
+	template<typename... Defaults>
+	auto defaults(Defaults &&... default_args);
+
+	template<typename... ArgumentsToBind>
+        auto bind(ArgumentsToBind &&... args_to_bind);
+
+    };
+     ...
+ };
+
+An element of type callable_t is copy-constructible, move-constructible,
+assignable and move assignable.
+
+It binds a callable object f of type F. The function call operator realises a
+permutation-invariant invocation of f for the passed arguments.
+
+The method
+
+    template<typename... Defaults>
+    defaults(Defaults && ... default_params)
+
+binds default values. This means that whenever an invocation for an element g of
+type callable_t<F> lacks arguments, the correct copy from the list of defaults
+is inserted to the list of function parameters. Otherwise the default value is
+ignored during an invocation. If a function parameter is neither given
+explicitly in the argument list of the function call operator nor given
+implicitly in default_params..., then a compile time error is triggered.
+
+Note that the default parameters need not exactly fit the types in signature of
+the callable. It suffices that they they can be implicitly converted to the
+types arising in the signature.
+
+Example:
+
+	auto f = signature<double, std::ostream& >::
+         		     callable( [](double x, std::ostream& os)
+		     	     {
+				os << x;
+				return os;
+		     	     });
+        f.defaults(std::cout, 2);
+
+	f();           // prints 2 to std::cout
+	f(std::cerr);  // prints 2 to std::cerr
+
+
+The method
+
+    template<typename... ArgsToBind>
+    bind(ArgsToBind && ...)
+
+acts exactly like defaults<ArgsToBind...> with one crucial difference:
+
+An argument that is bound cannot be explicitly provided by the user any more.
+It is fixed forever.
+
+Example:
+
+	auto f = signature<double, std::ostream& >::
+         		     callable( [](double x, std::ostream& os)
+		     	     {
+				os << x;
+				return os;
+		     	     });
+        f.bind(std::cout).defaults(2);
+
+	f();             // prints 2 to std::cout as in the previous example
+	f(std::cerr);    // Error, the parameter of type std::ostream& is fixed
+	f(2, std::cerr); // same error
+
+
+
+-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+
+Recursive Compositions of bind(...) and defaults(...):
+
+The methods bind and defaults can be combined recursively with each other.
+
+Example:
+
+	Consider a function-like object of the shape f: T1 x...x T5 -> Result.
+	Let t1, ... , tn denote parameters that are implicitly convertible to
+	the types T1, ..., Tn respectively
+
+	We let 
+
+	   auto g = signature<T1, ... , Tn>::
+	   	callable(f).bind(t1, t2).defaults(t3, t4).bind(t4, t5).
+
+	Then for arguments t3', t4', t5' implicitly convertible to T3, T4, T5
+	respectively we gain
+
+	     g()         == f(t1, t2, t3, t4, t5)
+	     g(t4', t3') == f(t1, t2, t3', t4', t5)
+	     g(t3')      == f(t1, t2, t3', t4,  t5)
+	     g(t5')      == compile time error
+
+	 g is a permutation invariant version of the function
+
+	   (t3', t4') ---> f(t1, t2, t3', t4', t5),
+
+         with t3' and t4' having default values t3, t4.
+
+-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.
+
+Important Note on Constructors for Default-Arguments and Arguments to be Bound:
+
+	  The methods defaults(DefaultArgs&&... ) / bind(ArgsToBind&&...)
+	  keep copies of types
+	       std::decay_t<DefaultArgs>... / std::decay_t<ArgsToBind>... .
+
+	  Hence they can only be used if the construtors
+
+	  	std::decay_t<DefaultArgs>(DefaultArgs&&) /
+		std::decay_t<ArgsToBind>(ArgsToBind&&)
+	  exist.
+
+	

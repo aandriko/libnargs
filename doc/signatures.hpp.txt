@@ -5,12 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef NARGS_DEFAULT_ARG_POLICY_INC
-#define NARGS_DEFAULT_ARG_POLICY_INC
 
-namespace nargs
-{
-    enum class default_args : bool { yes = true, no = false };
-} 
-    
-#endif // NARGS_DEFAULT_ARG_POLICY_INC
+The header signatures.hpp will contain certain extensions that are not ready yet.
+For now signatures.hpp only includes single_signature.hpp.
+
+Please read the documentation in single_signature.hpp.txt

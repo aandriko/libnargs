@@ -11,85 +11,91 @@
 #include "kraanerg/quantifiers.hpp"
 #include "kraanerg/set.hpp"
 #include <type_traits>
+#include <utility>
 
-namespace nargs {
+namespace nargs       {
 namespace invoker_dtl {
 
-    struct no_default_arg_collector { };
-
-    struct universal_default_arg_collector
+    template<typename T>
+    class default_arg_capsule
     {
-	template<typename... Args>
-	static void init_args(Args...) { }
-	
-	template<typename T>
-	static T arg()  { return T{}; }           
-    };
-
-    template<typename unique_lambda_id, typename... Args>
-    struct std_default_arg_collector;
-
-    template<typename... Args>
-    struct std_default_arg_collector<void, Args...>
-    {
-	template<typename lambda_id>
-	using with_unique_lambda_id = std_default_arg_collector<lambda_id, Args...>;
-    };
-        
-    template<typename unique_lambda_id, typename... Args>
-    struct default_arg_collector;
-
-    template<typename unique_lambda_id, typename... Args>
-    struct default_arg_collector
-    {
-    private:
-	template<typename T,
-		 typename =	     
-		 typename std::enable_if
-		 <
-		     kraanerg::eval <
-			 kraanerg::logic::exists< std::is_same<T, Args>... > >()
-		     >::type 
-		 >    
-	static T& arg_ref(T* pvalue = nullptr)
-	{
-	    static T    value_ { *pvalue };
-	    return value_;
-	}
-	
-	static void init_args_() { }
-	
-	template<typename H, typename... T>
-	static
-	void init_args_(H* h, T*... t)
-	{
-	    arg_ref<H>(h);
-	    return init_args_(t...);
-	}
-	
     public:
+	using value_type  = typename
+	    std::conditional_t<std::is_same< std::decay_t<T> &, T>::value,
+			       std::reference_wrapper<T>,
+			       std::decay_t<T> >;
+
+	using encapsulated_type = T;
+
+        default_arg_capsule(value_type const& val) : val_(val)            { }
+	default_arg_capsule(value_type     && val) : val_(std::move(val)) { }
+	default_arg_capsule(std::decay_t<T> &)      = delete;
 	
-	template<typename... PermutedArgs>
-	static void init_args(PermutedArgs... permuted_args)
+	default_arg_capsule(default_arg_capsule const&)            = default;
+	default_arg_capsule(default_arg_capsule && )               = default;
+
+	default_arg_capsule& operator=(default_arg_capsule const&) = default;
+	default_arg_capsule& operator=(default_arg_capsule &&    ) = default;
+
+	/*
+	template<typename S
+		 , typename = typename std::enable_if_t< std::is_convertible<value_type , S &&>::value >
+		 >
+	S && arg_() 
 	{
-	    static_assert( decltype(
-			       kraanerg::set<Args...>() ==
-			       kraanerg::set<typename std::decay<PermutedArgs>::type...>())::eval(),
-			   "");
-	    
-	    init_args_(&permuted_args...);
+	    return static_cast<S&&>(val_);
 	}
+	*/
+	T ref() { return static_cast<T>(val_); }
 	
-	template<typename T>
-	static
-	void reset_arg(T new_arg)  { arg_ref<T>() = std::move(new_arg); }
-	
-	template<typename T>
-	static
-	T    arg()                 { return T{ arg_ref<T>() }; }
-	
+    private:
+	value_type val_;
+	static_assert(std::is_reference<T>::value, "");
+/*
+	static_assert( ! std::is_same<T, element_type &>::value,
+		       "non-constant lvalue reference cannot be bound as default " \
+		       "arguments. " );
+*/
     };
+
+    template<typename...>
+    struct default_arg_collector;
     
+    template<>
+    struct default_arg_collector<> { };
+    
+    using no_defaults = default_arg_collector<>;
+    
+    template<typename... Args>
+    struct default_arg_collector
+    	: public default_arg_capsule<Args&&>...
+    {
+	template<typename S>
+//	    S && arg() { return this->template arg_<S>(); }
+	    S && arg() { return static_cast< default_arg_capsule<S&&>& >(*this).ref(); }
+	    
+
+	
+	default_arg_collector(default_arg_collector const & )           = default;
+	default_arg_collector(default_arg_collector && )                = default;
+
+	default_arg_collector& operator=(default_arg_collector const &) = default;
+	default_arg_collector& operator=(default_arg_collector && )     = default;
+
+	explicit default_arg_collector(Args&&... args)
+	    : default_arg_capsule<Args>(std::forward<Args>(args))...
+	{ }
+	
+	template<typename... MoreArgs>
+	default_arg_collector<Args..., MoreArgs...>
+	add_defaults(MoreArgs &&... more_args) // non-const!
+	{
+	    return default_arg_collector<Args..., MoreArgs...>
+		( this->template arg<Args>()..., std::forward<MoreArgs>(more_args)...);
+	}
+
+    };
+
 } // namespace invoker_dtl
 } // namesapce nargs
     

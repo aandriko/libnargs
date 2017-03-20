@@ -46,27 +46,27 @@ namespace signature_dtl {
 
 	template<typename Signature>
 	struct split
+	{
+	    using partition_ =
+		kraanerg::partition< discriminator, 
+				     typename kraanerg::term<Signature>::subterms::template apply<kraanerg::list> >;
+	    
+	    enum
 	    {
-		using partition_ =
-		    kraanerg::partition< discriminator, 
-					 typename kraanerg::term<Signature>::subterms::template apply<kraanerg::list> >;
-		
-		enum
-		{
-		    valid = bool( partition_::first::template apply<kraanerg::count_terms >::value == sizeof...(args_to_be_bound)   )
+		valid = bool( partition_::first::template apply<kraanerg::count_terms >::value == sizeof...(args_to_be_bound)   )
 		};
-
-		using bound_signature_in_list = typename std::conditional
-		    < valid,
-		      typename partition_::first::template apply<nargs::signature>,
-		      signature_error
-		      >::type;
-		
-		using free_signature_in_list = typename std::conditional
-		    < valid,
-		      typename partition_::second::template apply<nargs::signature>,
-		      signature_error
-		      >::type;
+	    
+	    using bound_signature_in_list = typename std::conditional
+		< valid,
+		  typename partition_::first::template apply<nargs::signature>,
+		  signature_error
+		>::type;
+	    
+	    using free_signature_in_list = typename std::conditional
+		< valid,
+		  typename partition_::second::template apply<nargs::signature>,
+		  signature_error
+		>::type;
 	};
     };
     
