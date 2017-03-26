@@ -127,7 +127,6 @@ int main()
 	    );
 
     std::cout << p << std::endl;
-    
 
 }
    

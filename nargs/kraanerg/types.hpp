@@ -18,10 +18,16 @@ namespace types_dtl {
 	     typename std::enable_if<
 			     ! std::is_member_pointer<decltype(T::eval)>::value
 			     >::type >
-    constexpr auto eval_(std::nullptr_t) { return T::eval(); }
+    constexpr auto eval_(std::nullptr_t) -> decltype(T::eval())
+	{ 
+		return T::eval(); 
+	}
     
     template<typename T>
-    constexpr auto eval_(...) { return T::value; }
+    constexpr auto eval_(...) -> decltype(T::value)
+	{ 
+		return T::value; 
+	}
 
     template<typename...>
     struct cond_t;
@@ -75,7 +81,10 @@ namespace kraanerg
     // or, when T::eval() does not exist, if T::value either does not exist
     // either, or if T::value is not statically convertible to bool.
     template<typename T>
-    constexpr auto eval() { return types_dtl::eval_<T>(nullptr); }
+    constexpr auto eval() -> decltype(types_dtl::eval_<T>(nullptr)) 
+	{ 
+		return types_dtl::eval_<T>(nullptr); 
+	}
 
     // if statement
     template<typename Cond, typename T, typename F>

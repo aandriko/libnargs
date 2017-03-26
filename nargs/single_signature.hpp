@@ -302,11 +302,13 @@ namespace signature_dtl {
     template<typename Signature, typename Candidate>
     struct pick_candidate<Signature, Candidate>
     {
+#ifndef _MSC_VER		 // avoid an internal VC++-Compiler Error
 	static_assert( kraanerg::eval
 		       <
 		         invoker_dtl::signature_dtl::
 		         first_signature_converts_to_second<Signature, Candidate>
 		       >(), "The proposed function call lacks a valid signature.");
+#endif			   
 	using type = Candidate;
     };
 
