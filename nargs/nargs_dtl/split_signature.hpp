@@ -27,47 +27,47 @@ namespace signature_dtl {
     template<typename to>
     struct token
     {
-	template<typename from>
-	using cast_possible_from = std::is_convertible<from, to>;
+        template<typename from>
+        using cast_possible_from = std::is_convertible<from, to>;
     };
 
     template<typename... args_to_be_bound>
     struct fix_args_to_be_bound
     {
-	template<typename member_of_signature>
-	struct discriminator
-	    : public kraanerg::list<args_to_be_bound...>::template
-	      apply_pointwise
-	      <
-	          token<member_of_signature>::template cast_possible_from
-	      >
+        template<typename member_of_signature>
+        struct discriminator
+            : public kraanerg::list<args_to_be_bound...>::template
+              apply_pointwise
+              <
+                  token<member_of_signature>::template cast_possible_from
+              >
               ::template apply<kraanerg::logic::exists> // true iff one of args_to_be_bound is castable into member_of_signature
-	{ };
+        { };
 
-	template<typename Signature>
-	struct split
-	{
-	    using partition_ =
-		kraanerg::partition< discriminator, 
-				     typename kraanerg::term<Signature>::subterms::template apply<kraanerg::list> >;
-	    
-	    enum
-	    {
-		valid = bool( partition_::first::template apply<kraanerg::count_terms >::value == sizeof...(args_to_be_bound)   )
-		};
-	    
-	    using bound_signature_in_list = typename std::conditional
-		< valid,
-		  typename partition_::first::template apply<nargs::signature>,
-		  signature_error
-		>::type;
-	    
-	    using free_signature_in_list = typename std::conditional
-		< valid,
-		  typename partition_::second::template apply<nargs::signature>,
-		  signature_error
-		>::type;
-	};
+        template<typename Signature>
+        struct split
+        {
+            using partition_ =
+                kraanerg::partition< discriminator, 
+                                     typename kraanerg::term<Signature>::subterms::template apply<kraanerg::list> >;
+            
+            enum
+            {
+                valid = bool( partition_::first::template apply<kraanerg::count_terms >::value == sizeof...(args_to_be_bound)   )
+                };
+            
+            using bound_signature_in_list = typename std::conditional
+                < valid,
+                  typename partition_::first::template apply<nargs::signature>,
+                  signature_error
+                >::type;
+            
+            using free_signature_in_list = typename std::conditional
+                < valid,
+                  typename partition_::second::template apply<nargs::signature>,
+                  signature_error
+                >::type;
+        };
     };
     
 } // namespace signature_dtl

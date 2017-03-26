@@ -28,12 +28,12 @@ gluBuild2DMipmaps:
 
     GLint gluBuild2DMipmaps(
             GLenum  target,
- 	    GLint   internalFormat,
- 	    GLsizei width,
- 	    GLsizei height,
- 	    GLenum  format,
- 	    GLenum  type,
- 	    const void * data);
+            GLint   internalFormat,
+            GLsizei width,
+            GLsizei height,
+            GLenum  format,
+            GLenum  type,
+            const void * data);
  
 The purpose of this function is not important to us. We are only interested in the many
 opportunities of misusing the function: We have many elements of identical type, so it is
@@ -56,7 +56,7 @@ code:
     auto improved_funtion =
       nargs::signature<Target, InternalFormat,
                        Width,  Height,
-		       Format, Type, Data     >::callable( & gluBuild2dMipmaps );
+                       Format, Type, Data     >::callable( & gluBuild2dMipmaps );
 
 
 A possible call of the improved function looks as follows:
@@ -70,8 +70,8 @@ A possible call of the improved function looks as follows:
     const void* data_           = ..;
 
     improved_function( Target(target_), InternalFormat(internalFormat_),
-	    	       Width(width_),   Height(height_),
-		       Format(format_), Type(type_), Data(data_) );
+                       Width(width_),   Height(height_),
+                       Format(format_), Type(type_), Data(data_) );
 
 
 In the call of the function 'improved_function' above the order of the parameter wrappers
@@ -81,8 +81,8 @@ any of the 7! = 5040 possible orders. For instance the following call leads to t
 result:
 
     improved_function(Format(format_), Type(type_), Data(data_),
-	   	      InternalFormat(internalFormat_), Target(target_), 
-		      Height(height_), Width(width_) );
+                      InternalFormat(internalFormat_), Target(target_), 
+                      Height(height_), Width(width_) );
 
 The full example can be found in the listing examples/example-gl-function.cpp
 
@@ -93,15 +93,15 @@ Consider the following class for a date:
     struct date
     {
     public:
-	date(int d, int m, int y) {  assert_validity_of_this_date(); }
+        date(int d, int m, int y) {  assert_validity_of_this_date(); }
 
-	int get_day()   const { return day_;   }  // range: 1..31
-    	int get_month() const { return month_; }  // range: 1..12
-    	int get_year()  const { return year_;  } 
+        int get_day()   const { return day_;   }  // range: 1..31
+        int get_month() const { return month_; }  // range: 1..12
+        int get_year()  const { return year_;  } 
 
     private:
-	int day_, month_, year_;
-    	void assert_validity_of_this_date() { //throw exception if date is invalid... }
+        int day_, month_, year_;
+        void assert_validity_of_this_date() { //throw exception if date is invalid... }
     };
 
 Regardless how carefully we implement the assertion method check_validity_of_this_date()

@@ -11,28 +11,28 @@ namespace nargs   {
     class wrapper
     {
     public:
-	template<typename... Args>
-	explicit wrapper(Args &&... args);
+        template<typename... Args>
+        explicit wrapper(Args &&... args);
 
-	wrapper(wrapper const& )           = default;
-	wrapper(wrapper && )               = default;
+        wrapper(wrapper const& )           = default;
+        wrapper(wrapper && )               = default;
 
-	wrapper& operator=(wrapper const&) = default;
-	wrapper& operator=(wrapper &&    ) = default;
-	
-	Element const& cref() const;
-	Element const& ref()  const;
-	Element&       ref();
+        wrapper& operator=(wrapper const&) = default;
+        wrapper& operator=(wrapper &&    ) = default;
+        
+        Element const& cref() const;
+        Element const& ref()  const;
+        Element&       ref();
 
-	operator Element const & ();
-	operator Element       & ();
-	operator Element      && ();
+        operator Element const & ();
+        operator Element       & ();
+        operator Element      && ();
 
-	template<typename S>
-	operator S();
+        template<typename S>
+        operator S();
 
-	template<typename S>
-	operator S() const;
+        template<typename S>
+        operator S() const;
     } ;
 }
 
@@ -47,199 +47,199 @@ Wrapper class for objects of type Element.
 TEMPLATE PARAMETERS:
 --------------------------------------------------------------------------------
 
-	Element: Type of the objects that are wrapped
+        Element: Type of the objects that are wrapped
 
-	Key:     Tag
+        Key:     Tag
 
 The tag type Key is used to generate wrappers to the same type Element, which
 shall be different types.
 
 Example:
-	struct height_tag;
-	struct width_tag;
+        struct height_tag;
+        struct width_tag;
 
-	wrapper<height_tag, double> height(2);
-	wrapper<width_tag,  double> width(3);
+        wrapper<height_tag, double> height(2);
+        wrapper<width_tag,  double> width(3);
 
-	Both wrappers have identical behaviour, but they are different types.
+        Both wrappers have identical behaviour, but they are different types.
 
 
 --------------------------------------------------------------------------------
 CONSTRUCTORS:
 --------------------------------------------------------------------------------
 
-(1)	template<typename... Args>
-	explicit wrapper(Args &&... args);
+(1)     template<typename... Args>
+        explicit wrapper(Args &&... args);
 
-(2')	explicit wrapper(Element     && elem);
-(3')	explicit wrapper(Element const& elem);
+(2')    explicit wrapper(Element     && elem);
+(3')    explicit wrapper(Element const& elem);
 
 
-	(1) creates a wrapper that holds a newly constructed element constructed
-	 by calling the constructor
-					Element(std::forward<Args&&>(args)...).
+        (1) creates a wrapper that holds a newly constructed element constructed
+         by calling the constructor
+                                        Element(std::forward<Args&&>(args)...).
 
         (2'), (3') copy construct a wrapper object by copying elem. The
-	constructors (2'), (3') do not explicitly appear in nargs.hpp. They are
-	covered by the constructor template (1). They are only mentioned to
-	show the frequent wrapper generation by using an element that has
-	already been constructed more explicitly.
+        constructors (2'), (3') do not explicitly appear in nargs.hpp. They are
+        covered by the constructor template (1). They are only mentioned to
+        show the frequent wrapper generation by using an element that has
+        already been constructed more explicitly.
 
 --------------------------------------------------------------------------------
 MEMBER FUNCTIONS:
 --------------------------------------------------------------------------------
 
-(1)	Element const& cref() const;
-(2)	Element const& ref()  const;
-(3)	Element&       ref();
+(1)     Element const& cref() const;
+(2)     Element const& ref()  const;
+(3)     Element&       ref();
 
-	(1), (2), (3) return a reference to the element kept in the wrapper.
+        (1), (2), (3) return a reference to the element kept in the wrapper.
 
 
 --------------------------------------------------------------------------------
 CONVERSIONS:
 --------------------------------------------------------------------------------
 
-(1)	operator Element const & ();
-(2)	operator Element       & ();
-(3)	operator Element      && ();
+(1)     operator Element const & ();
+(2)     operator Element       & ();
+(3)     operator Element      && ();
 
-(4)	template<typename S> operator S();
-(5)	template<typename S> operator S() const;
+(4)     template<typename S> operator S();
+(5)     template<typename S> operator S() const;
 
-	The conversion functions are designed to allow for opaque use of
-	wrappers. Wrappers shall behave as if they were of type Element.
-	Whenever an Element, a reference to an Element, or a pointer to an
-	element is passed to a callable as a parameter, it shall be possible to
-	possible to pass wrappers.
+        The conversion functions are designed to allow for opaque use of
+        wrappers. Wrappers shall behave as if they were of type Element.
+        Whenever an Element, a reference to an Element, or a pointer to an
+        element is passed to a callable as a parameter, it shall be possible to
+        possible to pass wrappers.
 
-	It is impossible to cast an instantiation of the wrapper to a different
-	wrapper instantiation. This restriction is intended as the wrapper
-	template is meant to provide arguments with unique types, each of which
-	shall be passed to a callable at most once. If we could cast them into
-	each other, this uniqueness property would be lost.
+        It is impossible to cast an instantiation of the wrapper to a different
+        wrapper instantiation. This restriction is intended as the wrapper
+        template is meant to provide arguments with unique types, each of which
+        shall be passed to a callable at most once. If we could cast them into
+        each other, this uniqueness property would be lost.
 
-	In order to resolve name lookup conflicts, the actual declarations of
-	of the conversion operators contain additional template default
-	arguments, the sole purpose of which is name lookup disambiguation.
+        In order to resolve name lookup conflicts, the actual declarations of
+        of the conversion operators contain additional template default
+        arguments, the sole purpose of which is name lookup disambiguation.
 
-	These parameters have been omitted because, albeit part of the
-	signature, they are implementation details that do not matter to a
-	user.
+        These parameters have been omitted because, albeit part of the
+        signature, they are implementation details that do not matter to a
+        user.
 
-	Still we give one example to the interested reader (it can be safely
-	omitted):
+        Still we give one example to the interested reader (it can be safely
+        omitted):
 
-	The operators (1), (2) are in fact declared in nargs.hpp
-	as follows:
+        The operators (1), (2) are in fact declared in nargs.hpp
+        as follows:
 
-	   (1):  Element const& ();
-	    
-	   (2):  template<std::nullptr_t = nullptr>
-	    	 Element& ();
+           (1):  Element const& ();
+            
+           (2):  template<std::nullptr_t = nullptr>
+                 Element& ();
 
-	The template argument of type std::nullptr_t has the effect that the
-	cast (1) will always preferred over (2) when a name lookup conflict
-	needs to be resolved, because non-templates have a higher priority
-	than templates in the lookup process.
-	
+        The template argument of type std::nullptr_t has the effect that the
+        cast (1) will always preferred over (2) when a name lookup conflict
+        needs to be resolved, because non-templates have a higher priority
+        than templates in the lookup process.
+        
 
 --------------------------------------------------------------------------------
 MACROS:
 --------------------------------------------------------------------------------
 
-	NARG_PAIR(x, ... )
+        NARG_PAIR(x, ... )
 
-	creates a template  alias with name x to a type wrapper, which keeps
-	elements of type __VA_ARGS__:
+        creates a template  alias with name x to a type wrapper, which keeps
+        elements of type __VA_ARGS__:
 
-	#define NARG_PAIR( x, ... ) class x##tag; \
-	using x = nargs::wrapper<x##tag, __VA_ARGS__>
+        #define NARG_PAIR( x, ... ) class x##tag; \
+        using x = nargs::wrapper<x##tag, __VA_ARGS__>
 
-	Example:
-		NARG_PAIR ( center_of_mass, some_ns::vec_3d )
+        Example:
+                NARG_PAIR ( center_of_mass, some_ns::vec_3d )
 
-		expands to
-		
-		    class center_of_mass_tag;
+                expands to
+                
+                    class center_of_mass_tag;
 
-		    using center_of_mass =
-			   nargs::wrapper<center_of_mass_tag, some_ns::vec_3d>;
+                    using center_of_mass =
+                           nargs::wrapper<center_of_mass_tag, some_ns::vec_3d>;
 
-	        It is only important to know that we gain a type with the
-		following properties:
+                It is only important to know that we gain a type with the
+                following properties:
 
-		    (1) There is an alias called center_of_mass to it
-		    (2) Objects of this type  behave as if they  were
-		        of type some_ns::vec_3d
+                    (1) There is an alias called center_of_mass to it
+                    (2) Objects of this type  behave as if they  were
+                        of type some_ns::vec_3d
 
-		The exact shape of the type is unimportant to the nargs
-		framework. Users can safely decide not to use the macro. Then
-		they need to provide either type wrappers of their own to
-		satisfy (1) and (2).
+                The exact shape of the type is unimportant to the nargs
+                framework. Users can safely decide not to use the macro. Then
+                they need to provide either type wrappers of their own to
+                satisfy (1) and (2).
 
-		If a callable object shall be called with parameters of types,
-		which are pairwise not convertible into each other, then the
-		parameter types can already be used as named arguments without
-		further need to wrap them.
+                If a callable object shall be called with parameters of types,
+                which are pairwise not convertible into each other, then the
+                parameter types can already be used as named arguments without
+                further need to wrap them.
 
-		    extern f(int, double*);
-		    auto f2 = signature<int, double*>::callable(f);
+                    extern f(int, double*);
+                    auto f2 = signature<int, double*>::callable(f);
 
-		    // f2 is permutation-invariant:
+                    // f2 is permutation-invariant:
 
-		    f2( 2, static_cast<double*>(nullptr) ); // Call 1
-		    f2( static_cast<double*>(nullptr), 2 ); // Call 2
-		    
-		Call 1 and call 2 are equivalent.
+                    f2( 2, static_cast<double*>(nullptr) ); // Call 1
+                    f2( static_cast<double*>(nullptr), 2 ); // Call 2
+                    
+                Call 1 and call 2 are equivalent.
 
-		In the following situation the wrapping of at least one
-		parameter is indispensable:
+                In the following situation the wrapping of at least one
+                parameter is indispensable:
 
-		    extern g(int, double);
-		    auto g2 = signature<int, double>::invoke(g); // ERROR
-		    	      		     			 		  
-		 The code above will not compile as int and double can be
-		 converted into each other.
-		 A call of the form g2( 2, 2.3 ) would be ambiguous, because it
-		 could either mean
-					g( 2, 2.3)
+                    extern g(int, double);
+                    auto g2 = signature<int, double>::invoke(g); // ERROR
+                                                                                  
+                 The code above will not compile as int and double can be
+                 converted into each other.
+                 A call of the form g2( 2, 2.3 ) would be ambiguous, because it
+                 could either mean
+                                        g( 2, 2.3)
 
-					   or
+                                           or
 
-					g(int(2.3), 2.0 ).
+                                        g(int(2.3), 2.0 ).
 
-		The ambiguity can be resolved by using the NARG_PAIR macro
-		as follows:
+                The ambiguity can be resolved by using the NARG_PAIR macro
+                as follows:
 
-		    extern g(int, double);
-		    NARG_PAIR(X, int);
-		    auto g2 = signature<X, double>::invoke(g); 
+                    extern g(int, double);
+                    NARG_PAIR(X, int);
+                    auto g2 = signature<X, double>::invoke(g); 
 
-		    g2(X(2.3),    3.0);  // both calls will result in
-		    g2(3     , X(2.3));  // g(2, 3.0);
+                    g2(X(2.3),    3.0);  // both calls will result in
+                    g2(3     , X(2.3));  // g(2, 3.0);
 
 
-		The disambiguation of parameter types is of course
-		not the only use for NARG_PAIR. The macro is also useful
-		to underline the semantic meaning of function parameters
-		in general:
+                The disambiguation of parameter types is of course
+                not the only use for NARG_PAIR. The macro is also useful
+                to underline the semantic meaning of function parameters
+                in general:
 
-		Example:
-			std::vector<std::string>
-			get_customers(bool include_inactive_customers);
+                Example:
+                        std::vector<std::string>
+                        get_customers(bool include_inactive_customers);
 
-			get_customers(true); // (1)
+                        get_customers(true); // (1)
 
-			NARG_PAIR(include_inactive, bool);
+                        NARG_PAIR(include_inactive, bool);
 
-			auto get_customers2
-			     = signature<include_inactive>::invoke(get_customers)
+                        auto get_customers2
+                             = signature<include_inactive>::invoke(get_customers)
 
-		 	get_customers2( include_inactive(true) ); // (2)
-		    
-		
-		The calls (1) and (2) are equivalent, but call (2)
-		describes the semantic meaning of the function argument
-		directly whereas in (1) it is obscured. (Boolean function
-		parameters are a bad practice).
+                        get_customers2( include_inactive(true) ); // (2)
+                    
+                
+                The calls (1) and (2) are equivalent, but call (2)
+                describes the semantic meaning of the function argument
+                directly whereas in (1) it is obscured. (Boolean function
+                parameters are a bad practice).

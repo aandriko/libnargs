@@ -30,7 +30,7 @@ namespace nargl
     NARG_PAIR(height, int);
 
     NARG_CALLABLE_WITH_ADL( init_window_size,
-			    nargs::signature<width, height>::callable (&glutInitWindowSize) );
+                            nargs::signature<width, height>::callable (&glutInitWindowSize) );
 }
 // In the namespace nargl we create  a function template that
 // provides the GL function

@@ -15,19 +15,19 @@ namespace kraanerg  {
 namespace types_dtl {
         
     template<typename T, typename =
-	     typename std::enable_if<
-			     ! std::is_member_pointer<decltype(T::eval)>::value
-			     >::type >
+             typename std::enable_if<
+                             ! std::is_member_pointer<decltype(T::eval)>::value
+                             >::type >
     constexpr auto eval_(std::nullptr_t) -> decltype(T::eval())
-	{ 
-		return T::eval(); 
-	}
+        { 
+                return T::eval(); 
+        }
     
     template<typename T>
     constexpr auto eval_(...) -> decltype(T::value)
-	{ 
-		return T::value; 
-	}
+        { 
+                return T::value; 
+        }
 
     template<typename...>
     struct cond_t;
@@ -35,7 +35,7 @@ namespace types_dtl {
     template<typename C, typename T, typename F>
     struct cond_t<C, T, F>
     {
-	using type = typename std::conditional< eval_<T>(nullptr), T, F>::type;
+        using type = typename std::conditional< eval_<T>(nullptr), T, F>::type;
     };
 
     template<typename...>
@@ -44,28 +44,28 @@ namespace types_dtl {
     template<template<typename...> class F, typename... Args>
     struct lazy_<function<F>, Args...>
     {
-	using desired_type = lazy_<function<F>, Args...>;
-	using type = F<Args...>;
+        using desired_type = lazy_<function<F>, Args...>;
+        using type = F<Args...>;
     };
 
     template<template<typename...> class F>
     struct lazy_<function<F> >
     {
-	using desired_type = lazy_<function<F> >;
-	using type = F<>;
+        using desired_type = lazy_<function<F> >;
+        using type = F<>;
     };
         
     template<typename T>
     struct lazy_<T>
     {
-	using desired_type = lazy_<T>;
-	using type = T;
+        using desired_type = lazy_<T>;
+        using type = T;
     };
 
     template<typename T>
     struct lazy_<lazy_<T> >
     {
-	using desired_type = typename lazy_<T>::desired_type;
+        using desired_type = typename lazy_<T>::desired_type;
     };
                
 } // namespace types_dtl
@@ -82,9 +82,9 @@ namespace kraanerg
     // either, or if T::value is not statically convertible to bool.
     template<typename T>
     constexpr auto eval() -> decltype(types_dtl::eval_<T>(nullptr)) 
-	{ 
-		return types_dtl::eval_<T>(nullptr); 
-	}
+        { 
+                return types_dtl::eval_<T>(nullptr); 
+        }
 
     // if statement
     template<typename Cond, typename T, typename F>
@@ -93,8 +93,8 @@ namespace kraanerg
     // lazy evaluation    
     namespace bound
     { 
-	template<typename... Args>
-	using lazy = typename types_dtl::lazy_<Args...>::desired_type;
+        template<typename... Args>
+        using lazy = typename types_dtl::lazy_<Args...>::desired_type;
     }
 
     template<template<typename...> class F, typename... Args>
@@ -106,42 +106,42 @@ namespace kraanerg
     template<typename T>
     struct type
     {
-	template<T t>
-	struct instance
-	{
-	    static constexpr T eval() { return t; }
+        template<T t>
+        struct instance
+        {
+            static constexpr T eval() { return t; }
 
-	    template<T t2>
-	    using rebind = typename type<T>::template instance<t2>;
-	};
+            template<T t2>
+            using rebind = typename type<T>::template instance<t2>;
+        };
 
-	struct hull { using type = T; };
-	
-	template<T... args>
-	struct sequence
-	{
-	    template<template<typename...> class F>
-	    using apply = F<instance<args>...>;
-	    
-	    template<typename S>
-	    using cast_to
-	    =
-		typename type<S>::template sequence
-		<
-		typename type<S>::template instance<static_cast<S>(args)...>
-		>;
-	};
+        struct hull { using type = T; };
+        
+        template<T... args>
+        struct sequence
+        {
+            template<template<typename...> class F>
+            using apply = F<instance<args>...>;
+            
+            template<typename S>
+            using cast_to
+            =
+                typename type<S>::template sequence
+                <
+                typename type<S>::template instance<static_cast<S>(args)...>
+                >;
+        };
 
-	template<typename B>
-	using enable_if = typename std::enable_if< eval<B>(), T >::type;
-	
+        template<typename B>
+        using enable_if = typename std::enable_if< eval<B>(), T >::type;
+        
     };
         
     template<bool b>
     using bool_  = type<bool>::instance<b>;
 
     using true_  = bool_<true>;
-    using false_ = bool_<false>;	
+    using false_ = bool_<false>;        
     
 } // namespace kraanerg
     

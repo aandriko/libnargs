@@ -14,7 +14,7 @@
 
 namespace kraanerg  { 
 namespace logic_dtl { 
-	
+        
     template<typename T, bool b> struct and_;
     template<typename T, bool b> struct or_;
     
